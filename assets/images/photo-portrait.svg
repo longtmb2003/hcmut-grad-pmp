@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#002855"/>
+      <stop offset="50%" stop-color="#003366"/>
+      <stop offset="100%" stop-color="#001833"/>
+    </linearGradient>
+    <radialGradient id="lightGlow" cx="50%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#0082c8" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#003366" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="600" height="750" fill="url(#bgGrad)"/>
+  <rect width="600" height="750" fill="url(#lightGlow)"/>
+
+  <!-- Khung viền ảnh sang trọng -->
+  <rect x="20" y="20" width="560" height="710" rx="8" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+  <rect x="28" y="28" width="544" height="694" rx="4" fill="none" stroke="rgba(0,163,224,0.3)" stroke-width="1"/>
+
+  <!-- Logo BK TP.HCM mờ ở nền -->
+  <g opacity="0.08" transform="translate(175, 120) scale(0.6)">
+    <polygon points="200,50 350,136 350,310 200,396 50,310 50,136" fill="#ffffff"/>
+  </g>
+
+  <!-- Hình bóng Cử nhân Bách Khoa -->
+  <g transform="translate(150, 180)">
+    <!-- Mũ cử nhân -->
+    <polygon points="150,80 60,115 150,150 240,115" fill="#001833"/>
+    <polygon points="150,80 60,115 150,150 240,115" fill="none" stroke="#00a3e0" stroke-width="2"/>
+    <rect x="135" y="115" width="30" height="40" fill="#001833" rx="2"/>
+    <!-- Tua nón cử nhân vàng Bách Khoa -->
+    <circle cx="150" cy="115" r="4" fill="#e5a93c"/>
+    <path d="M150 115 Q130 140 120 180" stroke="#e5a93c" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="120" cy="180" r="4" fill="#e5a93c"/>
+
+    <!-- Khuôn mặt nụ cười tươi -->
+    <ellipse cx="150" cy="190" rx="42" ry="50" fill="#ffdfba"/>
+    <!-- Tóc -->
+    <path d="M110 180 Q150 140 190 180 Q195 160 185 145 Q150 140 115 145 Z" fill="#1f2937"/>
+    <!-- Cổ áo sơ mi & Áo cử nhân xanh Bách Khoa -->
+    <polygon points="135,230 150,250 165,230" fill="#ffffff"/>
+    <polygon points="146,245 154,245 156,290 144,290" fill="#e5a93c"/>
+    <!-- Thân áo cử nhân xanh Bách Khoa với dải viền xanh dương -->
+    <path d="M60 260 L120 230 L180 230 L240 260 L270 420 L30 420 Z" fill="#002855"/>
+    <path d="M118 230 L118 420" stroke="#00a3e0" stroke-width="6"/>
+    <path d="M182 230 L182 420" stroke="#00a3e0" stroke-width="6"/>
+    <!-- Bó hoa chúc mừng tốt nghiệp trên tay -->
+    <g transform="translate(100, 340)">
+      <circle cx="30" cy="20" r="18" fill="#ef4444"/>
+      <circle cx="45" cy="10" r="16" fill="#f59e0b"/>
+      <circle cx="60" cy="25" r="16" fill="#ec4899"/>
+      <circle cx="45" cy="30" r="15" fill="#3b82f6"/>
+      <circle cx="40" cy="20" r="12" fill="#ffffff"/>
+      <path d="M30 45 L50 80 M45 45 L50 80 M60 45 L50 80" stroke="#10b981" stroke-width="4"/>
+    </g>
+  </g>
+
+  <!-- Nhãn chữ trang trọng -->
+  <rect x="60" y="630" width="480" height="60" rx="30" fill="rgba(0,40,85,0.8)" stroke="rgba(0,163,224,0.4)" stroke-width="1.5"/>
+  <text x="300" y="658" font-family="'Space Grotesk', -apple-system, sans-serif" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="1">
+    PHẠM MINH PHƯƠNG
+  </text>
+  <text x="300" y="677" font-family="'Space Grotesk', -apple-system, sans-serif" font-size="12" font-weight="600" fill="#00a3e0" text-anchor="middle" letter-spacing="2">
+    TÂN KỸ SƯ KỸ THUẬT NĂNG LƯỢNG · HCMUT 2026
+  </text>
+</svg>

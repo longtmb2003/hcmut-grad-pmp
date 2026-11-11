@@ -44,15 +44,638 @@
 html {
     scroll-behavior: smooth;
     scroll-padding-top: 76px;
+    overflow-x: hidden;
 }
 
 body {
-    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-color: #f3f7fb;
     color: var(--text-body);
     line-height: 1.6;
     overflow-x: hidden;
     position: relative;
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
+body.envelope-locked {
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   PHONG THƯ MỞ THIỆP GREENVELOPE-STYLE (INTERACTIVE 3D ENVELOPE REVEAL)
+   ========================================================================== */
+.envelope-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: radial-gradient(circle at 50% 35%, #002e63 0%, #001835 60%, #000d1f 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.65s ease, transform 0.65s ease;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.envelope-overlay.is-dismissed {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: scale(1.04);
+}
+
+.envelope-ambient-glow {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 22% 24%, rgba(0, 163, 224, 0.24) 0%, transparent 48%),
+        radial-gradient(circle at 78% 76%, rgba(229, 169, 60, 0.18) 0%, transparent 48%);
+    pointer-events: none;
+}
+
+.envelope-backdrop-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(rgba(125, 211, 252, 0.14) 1px, transparent 1px),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%);
+    background-size: 32px 32px, 64px 64px;
+    mask-image: radial-gradient(ellipse at 50% 48%, rgba(0, 0, 0, 0.85) 28%, rgba(0, 0, 0, 0.2) 85%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 48%, rgba(0, 0, 0, 0.85) 28%, rgba(0, 0, 0, 0.2) 85%);
+    pointer-events: none;
+}
+
+.envelope-frame-border {
+    position: fixed;
+    inset: 20px;
+    border: 1px solid rgba(229, 169, 60, 0.22);
+    border-radius: 20px;
+    box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.08);
+    pointer-events: none;
+}
+
+.envelope-stage {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 660px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-top: 12px;
+}
+
+.envelope-halo-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(680px, 92vw);
+    height: min(460px, 64vw);
+    transform: translate(-50%, -48%);
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(0, 163, 224, 0.16) 0%, rgba(229, 169, 60, 0.06) 45%, transparent 72%);
+    border: 1px dashed rgba(253, 230, 138, 0.16);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.envelope-top-caption {
+    margin-bottom: 28px;
+    transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.envelope-overlay.is-card-focused .envelope-top-caption,
+.envelope-overlay.is-card-focused .envelope-event-whisper {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+}
+
+.env-badge-pill {
+    display: inline-block;
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.9px;
+    color: #fde68a;
+    background: rgba(229, 169, 60, 0.15);
+    border: 1px solid rgba(229, 169, 60, 0.45);
+    padding: 7px 18px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 14px;
+    box-shadow: 0 6px 20px rgba(0, 10, 26, 0.25);
+}
+
+.env-recipient-line {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    font-size: 1.08rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.env-recipient-line span {
+    font-style: italic;
+    color: #fde68a;
+}
+
+.env-recipient-line strong {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    color: #ffffff;
+    font-size: clamp(1.32rem, 2.5vw, 1.68rem);
+    font-weight: 700;
+    margin-left: 6px;
+    letter-spacing: 0.01em;
+}
+
+/* Khối Phong Thư 3D */
+.bk-envelope {
+    position: relative;
+    width: min(560px, 88vw);
+    aspect-ratio: 500 / 320;
+    perspective: 1400px;
+    cursor: pointer;
+    outline: none;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bk-envelope:hover:not(.is-open) {
+    transform: translateY(-4px) scale(1.015);
+}
+
+/* Nền & Lót hoa văn bên trong phong thư */
+.env-back-liner {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    background: linear-gradient(155deg, #001c3d 0%, #002b5c 100%);
+    box-shadow: 0 28px 70px rgba(0, 8, 22, 0.78), 0 0 0 1px rgba(0, 163, 224, 0.3);
+    overflow: hidden;
+    z-index: 1;
+}
+
+.env-liner-pattern {
+    position: absolute;
+    inset: 6px;
+    border-radius: 10px;
+    background-image:
+        radial-gradient(rgba(229, 169, 60, 0.22) 1px, transparent 1px),
+        linear-gradient(135deg, rgba(0, 163, 224, 0.14) 25%, transparent 25%);
+    background-size: 18px 18px, 36px 36px;
+    opacity: 0.9;
+}
+
+/* Tấm Thiệp Mời Bên Trong Trượt Lên Khi Mở */
+.env-letter-card {
+    position: absolute;
+    left: 4%;
+    right: 4%;
+    top: 4%;
+    bottom: 4%;
+    z-index: 3;
+    overflow: hidden;
+    background: linear-gradient(180deg, #fffdf8 0%, #faf3e0 100%);
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 6px 26px rgba(0, 12, 30, 0.35);
+    transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.65s ease;
+}
+
+.bk-envelope.is-open .env-letter-card {
+    transform: translateY(-60%) scale(1.02);
+    box-shadow: 0 22px 54px rgba(0, 12, 30, 0.55);
+}
+
+/* Bước 2: Sau khi trượt ra khỏi phong thư, tấm thiệp phóng lớn ngay trung tâm để đọc rõ */
+.bk-envelope.is-card-focused {
+    cursor: default;
+}
+
+.bk-envelope.is-card-focused .env-letter-card {
+    transform: translateY(-10%) scale(1.12);
+    z-index: 20;
+    box-shadow:
+        0 32px 80px rgba(0, 8, 22, 0.72),
+        0 0 0 1px rgba(229, 169, 60, 0.45);
+}
+
+.bk-envelope.is-card-focused .env-back-liner,
+.bk-envelope.is-card-focused .env-pocket-left,
+.bk-envelope.is-card-focused .env-pocket-right,
+.bk-envelope.is-card-focused .env-pocket-bottom,
+.bk-envelope.is-card-focused .env-top-flap {
+    opacity: 0.14;
+    transform: translateY(72px) scale(0.92);
+    transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.env-letter-inner-border {
+    height: 100%;
+    border: 1.5px solid #d97706;
+    border-radius: 8px;
+    padding: clamp(10px, 2.5vw, 18px) clamp(12px, 3vw, 24px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: center;
+    background: radial-gradient(circle at 50% 0%, rgba(229, 169, 60, 0.09), transparent 70%);
+}
+
+.env-letter-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.env-card-logo {
+    width: clamp(24px, 5vw, 34px);
+    height: clamp(24px, 5vw, 34px);
+    object-fit: contain;
+    margin-bottom: 2px;
+}
+
+.env-letter-school {
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: clamp(0.56rem, 1.4vw, 0.7rem);
+    font-weight: 700;
+    letter-spacing: 0.9px;
+    color: var(--bk-blue);
+}
+
+.env-letter-title {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: clamp(0.84rem, 2.2vw, 1.05rem);
+    font-weight: 700;
+    color: #b45309;
+}
+
+.env-card-to {
+    font-size: clamp(0.66rem, 1.6vw, 0.8rem);
+    color: #475569;
+    margin: 2px 0;
+}
+
+.env-card-to strong {
+    color: var(--bk-navy);
+}
+
+.env-letter-event {
+    font-size: clamp(0.66rem, 1.7vw, 0.82rem);
+    font-weight: 600;
+    color: #334155;
+    margin: 2px 0;
+}
+
+.env-letter-name {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    font-size: clamp(1.2rem, 3.6vw, 1.72rem);
+    font-weight: 700;
+    color: var(--bk-navy);
+    margin: 2px 0;
+    line-height: 1.15;
+}
+
+.env-letter-major {
+    display: inline-block;
+    font-size: clamp(0.6rem, 1.5vw, 0.72rem);
+    font-weight: 700;
+    color: var(--bk-blue);
+    background: rgba(0, 163, 224, 0.1);
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 6px;
+}
+
+.env-letter-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: clamp(0.6rem, 1.5vw, 0.74rem);
+    font-weight: 700;
+    color: var(--bk-blue);
+    border-top: 1px dashed rgba(217, 119, 6, 0.35);
+    padding-top: 6px;
+}
+
+/* Túi Phong Thư 3 Mép Tam Giác (Nằm Đè Lên Nửa Dưới Tấm Thiệp) */
+.env-pocket-left {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    border-radius: 14px;
+    clip-path: polygon(0 0, 52% 52%, 0 100%);
+    background: linear-gradient(135deg, #003570 0%, #001f44 100%);
+    pointer-events: none;
+}
+
+.env-pocket-right {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    border-radius: 14px;
+    clip-path: polygon(100% 0, 48% 52%, 100% 100%);
+    background: linear-gradient(225deg, #003570 0%, #001f44 100%);
+    pointer-events: none;
+}
+
+.env-pocket-bottom {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    border-radius: 14px;
+    clip-path: polygon(0 100%, 50% 47%, 100% 100%);
+    background: linear-gradient(180deg, #003d80 0%, #00234d 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 18px;
+    filter: drop-shadow(0 -2px 6px rgba(0, 10, 26, 0.4));
+    pointer-events: none;
+}
+
+.env-pocket-foil-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.env-pocket-foil-rule {
+    width: 24px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(253, 230, 138, 0.72), transparent);
+}
+
+.env-pocket-foil-text {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    font-size: clamp(0.76rem, 1.8vw, 0.94rem);
+    font-weight: 700;
+    letter-spacing: 2.2px;
+    color: rgba(253, 230, 138, 0.92);
+    text-shadow: 0 1px 6px rgba(0, 8, 22, 0.45);
+}
+
+/* Nắp Phong Thư Tam Giác Lật Mở 3D */
+.env-top-flap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 58%;
+    z-index: 5;
+    transform-origin: top center;
+    transform: rotateX(0deg);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    background: linear-gradient(180deg, #00438a 0%, #002754 100%);
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    filter: drop-shadow(0 6px 12px rgba(0, 10, 25, 0.45));
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), z-index 0s 0.22s;
+    pointer-events: none;
+}
+
+.bk-envelope.is-open .env-top-flap {
+    transform: rotateX(180deg);
+    z-index: 1;
+}
+
+/* Con Dấu Sáp Mạ Vàng Niêm Phong (Wax Seal) */
+.env-wax-seal {
+    position: absolute;
+    left: 50%;
+    top: 56%;
+    transform: translate(-50%, -50%);
+    z-index: 6;
+    width: clamp(62px, 14vw, 76px);
+    height: clamp(62px, 14vw, 76px);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fde68a 0%, #e5a93c 48%, #b45309 100%);
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.55),
+        0 0 0 4px rgba(253, 230, 138, 0.22),
+        inset 0 2px 4px rgba(255, 255, 255, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+    animation: sealPulse 2.2s infinite ease-in-out;
+}
+
+@keyframes sealPulse {
+    0%, 100% { box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55), 0 0 0 4px rgba(253, 230, 138, 0.22); }
+    50% { box-shadow: 0 8px 28px rgba(229, 169, 60, 0.55), 0 0 0 10px rgba(253, 230, 138, 0.08); }
+}
+
+.wax-seal-ring {
+    width: 78%;
+    height: 78%;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(120, 53, 15, 0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #78350f;
+    line-height: 1;
+}
+
+.wax-seal-mono {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+    font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+}
+
+.wax-seal-year {
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.58rem;
+    font-weight: 700;
+    margin-top: 2px;
+}
+
+.bk-envelope.is-open .env-wax-seal {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.45);
+    pointer-events: none;
+}
+
+/* Nút Bấm Mở Thiệp & Bỏ Qua Phía Dưới */
+.envelope-bottom-controls {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: opacity 0.35s ease;
+}
+
+.btn-open-envelope {
+    background: linear-gradient(135deg, #fde68a 0%, #e5a93c 100%);
+    color: #451a03;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 13px 28px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 28px rgba(229, 169, 60, 0.38);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-open-envelope:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgba(229, 169, 60, 0.55);
+}
+
+.btn-skip-envelope {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    transition: color 0.2s ease;
+}
+
+.btn-skip-envelope:hover {
+    color: #ffffff;
+}
+
+.btn-open-envelope[hidden],
+.btn-skip-envelope[hidden],
+.btn-continue-home[hidden] {
+    display: none;
+}
+
+.btn-continue-home {
+    background: linear-gradient(135deg, #00e5ff 0%, #2563eb 52%, #e5a93c 100%);
+    background-size: 180% 180%;
+    color: #ffffff;
+    border: 1px solid rgba(253, 230, 138, 0.55);
+    border-radius: var(--radius-pill);
+    padding: 14px 32px;
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 12px 32px rgba(0, 229, 255, 0.28), 0 6px 20px rgba(229, 169, 60, 0.3);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-position 0.4s ease;
+    animation: continueBtnReveal 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.btn-continue-home:hover {
+    transform: translateY(-2px) scale(1.02);
+    background-position: 100% 50%;
+    box-shadow: 0 16px 38px rgba(0, 229, 255, 0.42), 0 8px 24px rgba(229, 169, 60, 0.42);
+}
+
+@keyframes continueBtnReveal {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.envelope-overlay.is-card-focused .envelope-bottom-controls {
+    margin-top: 44px;
+    position: relative;
+    z-index: 25;
+}
+
+.envelope-event-whisper {
+    margin-top: 22px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.35px;
+    color: rgba(226, 232, 240, 0.72);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+@media (max-width: 640px) {
+    .envelope-overlay {
+        padding: 16px;
+    }
+
+    .envelope-frame-border {
+        inset: 10px;
+        border-radius: 14px;
+    }
+
+    .envelope-stage {
+        padding-top: 8px;
+    }
+
+    .env-badge-pill {
+        font-size: 0.64rem;
+        letter-spacing: 0.45px;
+        padding: 5px 12px;
+        max-width: 100%;
+    }
+
+    .envelope-event-whisper {
+        font-size: 0.74rem;
+        margin-top: 16px;
+        padding: 0 10px;
+    }
+
+    .bk-envelope {
+        width: min(490px, 90vw);
+        aspect-ratio: 400 / 300;
+    }
+
+    .env-letter-card {
+        padding: 7px;
+    }
+
+    .env-letter-inner-border {
+        padding: 9px 10px;
+    }
+
+    .env-card-logo {
+        width: 24px;
+        height: 24px;
+        margin-bottom: 1px;
+    }
+
+    .env-letter-name {
+        font-size: 1.24rem;
+        margin: 1px 0;
+    }
+
+    .env-letter-major {
+        margin-bottom: 3px;
+        padding: 2px 9px;
+    }
+
+    .env-letter-meta {
+        padding-top: 4px;
+        font-size: 0.62rem;
+    }
+
+    .bk-envelope.is-card-focused .env-letter-card {
+        transform: translateY(-6%) scale(1.05);
+    }
+
+    .envelope-overlay.is-card-focused .envelope-bottom-controls {
+        margin-top: 32px;
+    }
+
+    .btn-continue-home {
+        padding: 12px 24px;
+        font-size: 0.92rem;
+    }
 }
 
 /* ==========================================================================
@@ -173,7 +796,7 @@ body::after {
 }
 
 h1, h2, h3, .serif-heading {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Lora', Georgia, serif;
     color: var(--text-title);
     letter-spacing: -0.01em;
 }
@@ -210,7 +833,7 @@ h1, h2, h3, .serif-heading {
 }
 
 .brand-name {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--bk-navy);
@@ -245,6 +868,24 @@ h1, h2, h3, .serif-heading {
 
 .nav-menu a:hover {
     color: var(--bk-blue);
+}
+
+.nav-btn-envelope {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid rgba(217, 119, 6, 0.35);
+    padding: 7px 16px;
+    border-radius: var(--radius-pill);
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.22s ease;
+}
+
+.nav-btn-envelope:hover {
+    background: #fde68a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.22);
 }
 
 .nav-btn-rsvp {
@@ -350,7 +991,7 @@ h1, h2, h3, .serif-heading {
 }
 
 .hero-major-highlight {
-    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(1.15rem, 2.3vw, 1.45rem);
     font-weight: 700;
     color: #0284c7;
@@ -417,7 +1058,7 @@ h1, h2, h3, .serif-heading {
 }
 
 .stat-number {
-    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.85rem;
     font-weight: 800;
     color: #002855;
@@ -434,72 +1075,79 @@ h1, h2, h3, .serif-heading {
 }
 
 .hero-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    max-width: 520px;
+    width: 100%;
+}
+
+.btn-bk-primary,
+.btn-bk-outline,
+.btn-bk-celebrate,
+.btn-bk-fireworks,
+.btn-bk-share {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.94rem;
+    min-height: 52px;
+    padding: 12px 20px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: all 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero-buttons .btn-bk-primary,
+.hero-buttons .btn-bk-celebrate,
+.hero-buttons .btn-bk-fireworks,
+.hero-buttons .btn-bk-share {
+    width: 100%;
+    white-space: nowrap;
 }
 
 .btn-bk-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--bk-blue);
+    background: linear-gradient(135deg, #003366 0%, #002347 100%);
     color: #ffffff;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 0.95rem;
-    padding: 14px 28px;
-    border-radius: var(--radius-pill);
-    box-shadow: 0 4px 16px rgba(0, 51, 102, 0.25);
-    transition: all 0.25s ease;
+    border: 1.5px solid rgba(125, 211, 252, 0.48);
+    box-shadow: 0 8px 22px rgba(0, 40, 85, 0.28);
 }
 
 .btn-bk-primary:hover {
-    background: var(--bk-navy);
+    background: linear-gradient(135deg, #004488 0%, #002855 100%);
+    border-color: #7dd3fc;
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 51, 102, 0.35);
+    box-shadow: 0 12px 28px rgba(0, 51, 102, 0.38);
 }
 
 .btn-bk-outline {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
     background: #ffffff;
     color: var(--bk-navy);
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 0.95rem;
-    padding: 14px 24px;
-    border-radius: var(--radius-pill);
-    border: 1.5px solid var(--border-light);
-    transition: all 0.25s ease;
+    border: 1.5px solid rgba(0, 80, 157, 0.32);
+    box-shadow: 0 4px 14px rgba(0, 40, 85, 0.08);
 }
 
 .btn-bk-outline:hover {
     border-color: var(--bk-cyan);
     color: var(--bk-blue);
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 163, 224, 0.16);
 }
 
 .btn-bk-celebrate {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: linear-gradient(135deg, var(--bk-cyan) 0%, #00509d 100%);
+    background: linear-gradient(135deg, #00a3e0 0%, #00509d 100%);
     color: #ffffff;
-    border: none;
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 0.95rem;
-    padding: 14px 24px;
-    border-radius: var(--radius-pill);
-    box-shadow: 0 4px 18px rgba(0, 163, 224, 0.35);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1.5px solid rgba(186, 230, 253, 0.55);
+    box-shadow: 0 8px 24px rgba(0, 163, 224, 0.36);
 }
 
 .btn-bk-celebrate:hover {
-    transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 8px 28px rgba(0, 163, 224, 0.5);
+    transform: translateY(-2px) scale(1.02);
+    border-color: #ffffff;
+    box-shadow: 0 12px 30px rgba(0, 163, 224, 0.52);
 }
 
 .btn-bk-celebrate:active {
@@ -507,24 +1155,15 @@ h1, h2, h3, .serif-heading {
 }
 
 .btn-bk-fireworks {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
     background: linear-gradient(135deg, #002855 0%, #004b87 100%);
     color: #ffd166;
-    border: 1.5px solid rgba(255, 209, 102, 0.4);
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 0.95rem;
-    padding: 14px 22px;
-    border-radius: var(--radius-pill);
-    box-shadow: 0 4px 18px rgba(0, 40, 85, 0.25);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1.5px solid rgba(255, 209, 102, 0.65);
+    box-shadow: 0 8px 24px rgba(0, 40, 85, 0.3);
 }
 
 .btn-bk-fireworks:hover {
-    transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 8px 26px rgba(255, 209, 102, 0.3);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 28px rgba(255, 209, 102, 0.35);
     border-color: #ffd166;
     color: #ffffff;
 }
@@ -534,24 +1173,18 @@ h1, h2, h3, .serif-heading {
 }
 
 .btn-bk-share {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: #ffffff;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
     color: var(--bk-navy);
-    border: 1.5px solid var(--border-light);
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 0.95rem;
-    padding: 14px 22px;
-    border-radius: var(--radius-pill);
-    transition: all 0.25s ease;
+    border: 1.5px solid rgba(0, 119, 200, 0.45);
+    box-shadow: 0 8px 20px rgba(0, 119, 200, 0.16);
 }
 
 .btn-bk-share:hover {
-    border-color: var(--bk-blue);
-    color: var(--bk-blue);
+    background: linear-gradient(135deg, #0077c8 0%, #00509d 100%);
+    border-color: rgba(186, 230, 253, 0.7);
+    color: #ffffff;
     transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(0, 119, 200, 0.32);
 }
 
 /* Khung Chân Dung Nhân Vật Chính Nổi Bật */
@@ -568,11 +1201,33 @@ h1, h2, h3, .serif-heading {
     box-shadow: 
         0 24px 50px -12px rgba(0, 40, 85, 0.25),
         0 0 35px rgba(0, 163, 224, 0.18);
-    transition: transform 0.35s ease, box-shadow 0.35s ease;
+    transition: transform 0.18s ease-out, box-shadow 0.35s ease;
+    transform-style: preserve-3d;
+    will-change: transform;
+}
+
+.portrait-holo-glare {
+    position: absolute;
+    inset: 0;
+    border-radius: 26px;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    background: radial-gradient(
+        circle at var(--glare-x, 50%) var(--glare-y, 50%),
+        rgba(255, 255, 255, 0.32) 0%,
+        rgba(0, 163, 224, 0.14) 30%,
+        transparent 68%
+    );
+    mix-blend-mode: overlay;
+    transition: opacity 0.3s ease;
+}
+
+.hero-portrait-card:hover .portrait-holo-glare {
+    opacity: 1;
 }
 
 .hero-portrait-card:hover {
-    transform: translateY(-4px);
     box-shadow: 
         0 30px 60px -10px rgba(0, 40, 85, 0.3),
         0 0 45px rgba(0, 163, 224, 0.25);
@@ -614,14 +1269,11 @@ h1, h2, h3, .serif-heading {
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 10px 24px rgba(0, 20, 50, 0.4);
-}
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    z-index: 6;
 }
 
 .floating-name {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
     font-size: 1.15rem;
     font-weight: 700;
     color: #ffffff;
@@ -672,11 +1324,12 @@ h1, h2, h3, .serif-heading {
    ========================================================================== */
 .photo-gallery-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 22px;
 }
 
 .gallery-card {
+    grid-column: span 2;
     background: #ffffff;
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -684,6 +1337,14 @@ h1, h2, h3, .serif-heading {
     box-shadow: var(--shadow-soft);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.gallery-card:nth-child(1),
+.gallery-card:nth-child(2) {
+    grid-column: span 3;
 }
 
 .gallery-card:hover {
@@ -692,16 +1353,13 @@ h1, h2, h3, .serif-heading {
     border-color: var(--bk-cyan);
 }
 
-.gallery-card.featured-wide {
-    grid-column: span 2;
-}
-
 .gallery-img-wrapper {
     width: 100%;
     aspect-ratio: 16 / 10;
     overflow: hidden;
     background: var(--bk-navy);
     position: relative;
+    flex: 1;
 }
 
 .gallery-card.tall-portrait .gallery-img-wrapper {
@@ -743,235 +1401,428 @@ h1, h2, h3, .serif-heading {
 }
 
 /* ==========================================================================
-   THẺ HỒ SƠ KỸ SƯ BÁCH KHOA CHUẨN MỰC (ENGINEER DOSSIER — ROYAL NAVY)
-   Chuẩn bảng màu Bách Khoa: Xanh đậm #002855, Cyan #00A3E0, Vàng #FFD166
+   PHẦN 1: GÓC TRI ÂN & HỘP KỶ VẬT 5 NĂM (STORY & MEMORY DECK)
    ========================================================================== */
-.engineer-dossier-card {
-    background: linear-gradient(145deg, #001e3d 0%, #002855 55%, #003875 100%);
-    border: 1.5px solid rgba(0, 163, 224, 0.4);
-    border-radius: 28px;
-    box-shadow: 
-        0 20px 50px -12px rgba(0, 30, 70, 0.35),
-        0 0 30px rgba(0, 163, 224, 0.15),
-        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.25fr);
-    gap: clamp(32px, 4vw, 56px);
-    padding: clamp(28px, 4vw, 44px) clamp(24px, 4vw, 48px);
-    position: relative;
-    overflow: hidden;
-    color: #ffffff;
-}
-
-.engineer-dossier-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #00a3e0 0%, #ffd166 50%, #00a3e0 100%);
-}
-
-.dossier-identity-col {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.dossier-school-badge {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-    margin-bottom: 20px;
-}
-
-.dossier-logo {
-    width: 46px;
-    height: 46px;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
-}
-
-.dossier-univ-name {
-    font-size: 0.95rem;
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: 0.8px;
-}
-
-.dossier-degree-name {
-    font-size: 0.84rem;
-    font-weight: 700;
-    color: var(--bk-cyan);
-    margin-top: 2px;
-}
-
-.dossier-badge-code {
-    margin-left: auto;
-    font-family: 'Space Grotesk', monospace;
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: #ffffff;
-    background: rgba(0, 163, 224, 0.25);
-    border: 1px solid rgba(0, 163, 224, 0.5);
-    padding: 4px 12px;
-    border-radius: var(--radius-pill);
-    white-space: nowrap;
-}
-
-.dossier-meta-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 18px;
-    padding: 18px 22px;
-    margin-bottom: 22px;
-    backdrop-filter: blur(8px);
-}
-
-.meta-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.92rem;
-}
-
-.meta-row-label {
-    color: #93c5fd;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-}
-
-.meta-row-val {
-    color: #ffffff;
-    font-weight: 700;
-}
-
-.dossier-contact-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.contact-action-btn {
+.story-period-pill {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 22px;
-    border-radius: var(--radius-pill);
-    font-size: 0.88rem;
+    background: #ffffff;
+    border: 1px solid rgba(0, 163, 224, 0.28);
+    color: var(--bk-blue);
     font-weight: 700;
-    text-decoration: none;
-    transition: all 0.22s ease;
+    font-size: 0.84rem;
+    padding: 7px 16px;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 4px 12px rgba(0, 40, 85, 0.06);
 }
 
-.contact-action-btn.zalo {
-    background: linear-gradient(135deg, #0068ff 0%, #0084ff 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 16px rgba(0, 104, 255, 0.4);
+.story-showcase-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 28px;
+    align-items: stretch;
 }
 
-.contact-action-btn.zalo:hover {
-    background: #0053cc;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 104, 255, 0.5);
-}
-
-.contact-action-btn.fb {
-    background: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
-    border: 1.5px solid rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(8px);
-}
-
-.contact-action-btn.fb:hover {
-    background: #1877f2;
-    border-color: #1877f2;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(24, 119, 242, 0.4);
-}
-
-/* Cột Phải: 3 Trụ Cột Chuyên Môn Tinh Gọn */
-.dossier-pillars-col {
+/* Cột Trái: Thư Ngỏ Tri Ân (Đồng bộ phong cách thiệp mời kem nhũ vàng) */
+.gratitude-letter-card {
+    background: linear-gradient(180deg, #fffdf9 0%, #fbf5e6 100%);
+    border: 1.5px solid rgba(217, 119, 6, 0.28);
+    border-radius: 24px;
+    padding: clamp(24px, 3vw, 34px);
+    box-shadow:
+        0 18px 42px -14px rgba(0, 40, 85, 0.14),
+        inset 0 0 0 6px rgba(255, 255, 255, 0.65);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    position: relative;
 }
 
-.dossier-pillars-heading {
-    font-size: 1.02rem;
-    font-weight: 800;
-    color: #ffd166;
-    margin-bottom: 16px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-}
-
-.dossier-pillar-item {
+.letter-top-bar {
     display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 16px 20px;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 16px;
-    margin-bottom: 12px;
-    transition: all 0.25s ease;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 18px;
+    border-bottom: 1px dashed rgba(217, 119, 6, 0.3);
 }
 
-.dossier-pillar-item:last-child {
-    margin-bottom: 0;
+.letter-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    flex: 1 1 320px;
 }
 
-.dossier-pillar-item:hover {
-    background: rgba(255, 255, 255, 0.14);
-    border-color: var(--bk-cyan);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-}
-
-.pillar-icon-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: rgba(0, 163, 224, 0.2);
-    border: 1px solid rgba(0, 163, 224, 0.35);
-    display: flex;
+.letter-tab-btn {
+    background: #ffffff;
+    border: 1.5px solid rgba(0, 80, 157, 0.28);
+    color: var(--bk-navy);
+    font-size: 0.83rem;
+    font-weight: 700;
+    min-height: 40px;
+    padding: 8px 12px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
-    flex-shrink: 0;
+    gap: 6px;
+    white-space: nowrap;
+    box-shadow: 0 3px 10px rgba(0, 40, 85, 0.06);
+    transition: all 0.22s ease;
 }
 
-.pillar-icon-box.cyan {
-    background: rgba(0, 163, 224, 0.25);
-    border-color: rgba(0, 163, 224, 0.5);
+.letter-tab-btn:hover {
+    border-color: var(--bk-cyan);
+    color: var(--bk-blue);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(0, 163, 224, 0.16);
 }
 
-.pillar-icon-box.gold {
-    background: rgba(229, 169, 60, 0.25);
-    border-color: rgba(229, 169, 60, 0.5);
-}
-
-.dossier-pillar-item h4 {
-    font-size: 0.98rem;
-    font-weight: 700;
+.letter-tab-btn.active {
+    background: linear-gradient(135deg, #002855 0%, #00509d 100%);
     color: #ffffff;
-    margin-bottom: 4px;
+    border-color: rgba(125, 211, 252, 0.72);
+    box-shadow: 0 8px 18px rgba(0, 40, 85, 0.24);
 }
 
-.dossier-pillar-item p {
-    font-size: 0.84rem;
-    color: rgba(255, 255, 255, 0.78);
-    line-height: 1.48;
+.letter-seal-tag {
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid rgba(217, 119, 6, 0.32);
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+}
+
+.letter-paper-body {
+    padding: 24px 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.letter-paper-body.is-switching {
+    animation: letterFadeIn 0.34s ease;
+}
+
+@keyframes letterFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.letter-salutation {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: clamp(1.15rem, 2vw, 1.38rem);
+    font-weight: 700;
+    color: #b45309;
+    margin-bottom: 12px;
+}
+
+.letter-text {
+    font-size: 0.98rem;
+    line-height: 1.78;
+    color: #334155;
     margin: 0;
+}
+
+.letter-bottom-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-top: 18px;
+    border-top: 1px dashed rgba(217, 119, 6, 0.3);
+}
+
+.btn-spark-tribute {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #003366 0%, #0077c8 100%);
+    color: #ffffff;
+    border: 1.5px solid rgba(125, 211, 252, 0.55);
+    border-radius: var(--radius-pill);
+    min-height: 44px;
+    padding: 10px 20px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 22px rgba(0, 51, 102, 0.26);
+    transition: transform 0.18s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.btn-spark-tribute:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(0, 163, 224, 0.35);
+}
+
+.btn-spark-tribute.is-pulsing .spark-icon {
+    animation: sparkPop 0.35s ease;
+}
+
+@keyframes sparkPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.45) rotate(-12deg); }
+    100% { transform: scale(1); }
+}
+
+.spark-counter {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 9px;
+    border-radius: var(--radius-pill);
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #fde68a;
+}
+
+.letter-signature {
+    text-align: right;
+    margin-left: auto;
+}
+
+.sig-label {
+    display: block;
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+.sig-name {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 1.18rem;
+    color: var(--bk-navy);
+}
+
+/* Cột Phải: Hộp Kỷ Vật 5 Năm (Interactive Stacked Memory Deck) */
+.memory-deck-panel {
+    background: linear-gradient(150deg, #001c3d 0%, #002e63 60%, #003e80 100%);
+    border: 1.5px solid rgba(0, 163, 224, 0.38);
+    border-radius: 24px;
+    padding: 24px 24px 20px;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 20px 48px -12px rgba(0, 30, 70, 0.36);
+}
+
+.memory-deck-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.deck-eyebrow {
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 1.1px;
+    color: #7dd3fc;
+}
+
+.deck-counter {
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fde68a;
+    background: rgba(229, 169, 60, 0.16);
+    border: 1px solid rgba(229, 169, 60, 0.35);
+    padding: 3px 11px;
+    border-radius: var(--radius-pill);
+}
+
+.memory-card-stage {
+    position: relative;
+    flex: 1;
+    min-height: 220px;
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 18px;
+}
+
+.memory-stack-ghost {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    pointer-events: none;
+}
+
+.memory-stack-ghost.back-2 {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transform: translateY(10px) scale(0.93);
+    z-index: 1;
+}
+
+.memory-stack-ghost.back-1 {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transform: translateY(5px) scale(0.965);
+    z-index: 2;
+}
+
+.memory-active-card {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    background: #ffffff;
+    color: var(--text-body);
+    border-radius: 18px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    border: 1.5px solid rgba(0, 163, 224, 0.28);
+    box-shadow: 0 14px 30px rgba(0, 10, 28, 0.35);
+    transition: transform 0.22s ease, border-color 0.25s ease;
+    outline: none;
+}
+
+.memory-active-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--bk-cyan);
+}
+
+.memory-active-card.is-finale {
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf0 100%);
+    border-color: rgba(229, 169, 60, 0.75);
+}
+
+.memory-active-card.is-flipping {
+    animation: memoryCardSwitch 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes memoryCardSwitch {
+    0% { opacity: 0.45; transform: translateX(14px) scale(0.98); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+.memory-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.memory-year-badge {
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--bk-blue);
+    background: #e0f2fe;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+}
+
+.memory-active-card.is-finale .memory-year-badge {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.memory-emoji-icon {
+    font-size: 1.65rem;
+    line-height: 1;
+}
+
+.memory-card-title {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    font-size: 1.24rem;
+    font-weight: 700;
+    color: var(--bk-navy);
+    margin: 0 0 8px;
+    line-height: 1.3;
+}
+
+.memory-card-desc {
+    font-size: 0.89rem;
+    color: #475569;
+    line-height: 1.62;
+    margin: 0 0 16px;
+}
+
+.memory-card-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px dashed #e2e8f0;
+    font-size: 0.78rem;
+}
+
+.memory-place {
+    font-weight: 600;
+    color: var(--bk-blue);
+}
+
+.memory-tap-hint {
+    font-weight: 700;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.memory-deck-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.deck-nav-btn {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border: 1.5px solid rgba(125, 211, 252, 0.42);
+    border-radius: var(--radius-pill);
+    min-width: 92px;
+    min-height: 38px;
+    padding: 7px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.deck-nav-btn:hover {
+    background: rgba(0, 163, 224, 0.28);
+    border-color: var(--bk-cyan);
+}
+
+.memory-dots {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.m-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: width 0.2s ease, background 0.2s ease;
+}
+
+.m-dot.active {
+    width: 22px;
+    border-radius: 999px;
+    background: #fde68a;
 }
 
 /* ==========================================================================
@@ -998,7 +1849,7 @@ h1, h2, h3, .serif-heading {
 }
 
 .countdown-digits {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
     font-size: clamp(2.2rem, 5vw, 3.2rem);
     font-weight: 700;
     color: var(--bk-navy);
@@ -1195,7 +2046,7 @@ h1, h2, h3, .serif-heading {
     border-left: 3px solid var(--bk-cyan);
     padding: 12px 14px;
     border-radius: var(--radius-sm);
-    font-family: 'Playfair Display', serif;
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
     font-style: italic;
     font-size: 0.95rem;
     color: var(--bk-navy);
@@ -1225,7 +2076,7 @@ h1, h2, h3, .serif-heading {
 }
 
 .footer-name {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
     font-size: 1.35rem;
     font-weight: 700;
     color: var(--bk-navy);
@@ -1348,541 +2199,12 @@ h1, h2, h3, .serif-heading {
     text-decoration: underline;
 }
 
-/* ==========================================================================
-   CON ĐƯỜNG HÀNH TRÌNH ROADWAY K2021 – 2026 (PATHWAY WITH HOVER TOOLTIPS)
-   ========================================================================== */
-.roadmap-badge-progress {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: #e6f9f0;
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #065f46;
-    font-weight: 700;
-    font-size: 0.82rem;
-    padding: 6px 16px;
-    border-radius: var(--radius-pill);
-}
-
-.pulse-energy-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-    animation: energyPulse 1.8s infinite;
-}
-
-@keyframes energyPulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-
-.road-interactive-container {
-    background: linear-gradient(180deg, #ffffff 0%, #f6faff 60%, #eef5fc 100%);
-    border: 1.5px solid rgba(0, 163, 224, 0.28);
-    border-radius: 32px;
-    box-shadow: 
-        0 20px 60px -15px rgba(0, 40, 85, 0.1),
-        0 0 0 1px #ffffff inset;
-    padding: clamp(28px, 3.5vw, 44px) clamp(24px, 3.5vw, 48px);
-    position: relative;
-    overflow: hidden;
-}
-
-.road-hint-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 20px;
-    background: rgba(0, 163, 224, 0.08);
-    border: 1px solid rgba(0, 163, 224, 0.25);
-    border-radius: var(--radius-pill);
-    font-size: 0.86rem;
-    color: var(--bk-navy);
-    margin-bottom: 24px;
-    text-align: center;
-}
-
-/* Sân khấu Con Đường (Road Stage Wrapper & Canvas) */
-.road-stage-wrapper {
-    position: relative;
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 12px;
-}
-
-.road-stage {
-    position: relative;
-    width: 100%;
-    min-width: 1040px;
-    height: 480px;
-    margin: 20px 0 30px;
-}
-
-.road-svg-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-}
-
-.road-center-dashes {
-    animation: roadDashesFlow 20s linear infinite;
-}
-
-@keyframes roadDashesFlow {
-    to { stroke-dashoffset: -380; }
-}
-
-/* Cột mốc Trạm Dừng Chân trên đường (Milestone Station) */
-.road-milestone {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    cursor: pointer;
-    z-index: 20;
-    outline: none;
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.road-milestone:focus {
-    z-index: 40;
-}
-
-/* Vị trí chuẩn tọa độ đường cong rộng rãi */
-.road-milestone.pos-2021 { left: 10%; top: 50%; }
-.road-milestone.pos-2022 { left: 26%; top: 20.8%; }
-.road-milestone.pos-2023 { left: 42%; top: 79.2%; }
-.road-milestone.pos-2024 { left: 58%; top: 20.8%; }
-.road-milestone.pos-2025 { left: 74%; top: 79.2%; }
-.road-milestone.pos-2026 { left: 90%; top: 50%; }
-
-/* Huy hiệu ghim trạm (Pin) */
-.milestone-pin {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    transition: transform 0.28s ease;
-}
-
-.road-milestone:hover .milestone-pin,
-.road-milestone.active .milestone-pin {
-    transform: scale(1.15) translateY(-4px);
-}
-
-.pin-halo {
-    position: absolute;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(0, 163, 224, 0.2);
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    animation: pinHaloPulse 2s infinite ease-out;
-}
-
-.pin-halo.gold {
-    background: rgba(245, 158, 11, 0.28);
-}
-
-@keyframes pinHaloPulse {
-    0% { transform: translateX(-50%) scale(0.85); opacity: 0.9; }
-    100% { transform: translateX(-50%) scale(1.7); opacity: 0; }
-}
-
-.pin-core {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 3px solid var(--bk-blue);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 14px rgba(0, 40, 85, 0.18);
-    position: relative;
-    z-index: 2;
-    transition: all 0.25s ease;
-}
-
-.road-milestone:hover .pin-core,
-.road-milestone.active .pin-core {
-    border-color: var(--bk-cyan);
-    box-shadow: 0 6px 20px rgba(0, 163, 224, 0.45);
-}
-
-.pin-core.gold {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    border-color: #d97706;
-    box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
-}
-
-.pin-icon {
-    font-size: 0.95rem;
-    line-height: 1;
-}
-
-.pin-year {
-    font-family: 'Space Grotesk', monospace;
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--bk-blue);
-    line-height: 1;
-    margin-top: 2px;
-}
-
-.pin-year.gold {
-    color: #b45309;
-}
-
-.pin-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--bk-navy);
-    background: #ffffff;
-    border: 1px solid rgba(0, 51, 102, 0.15);
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
-    margin-top: 6px;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0, 40, 85, 0.08);
-}
-
-.pin-label.highlight {
-    background: #fef3c7;
-    color: #92400e;
-    border-color: rgba(217, 119, 6, 0.3);
-}
-
-/* Tooltip Tóm Tắt Khi Hover */
-.milestone-tooltip {
-    position: absolute;
-    width: 290px;
-    background: #ffffff;
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    padding: 16px 18px;
-    box-shadow: 0 16px 36px rgba(0, 40, 85, 0.2);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: all 0.26s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 50;
-    text-align: left;
-}
-
-.milestone-tooltip.tooltip-up {
-    bottom: calc(100% + 14px);
-    left: 50%;
-    transform: translateX(-50%) translateY(8px);
-}
-
-.milestone-tooltip.tooltip-up::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border-width: 8px 8px 0;
-    border-style: solid;
-    border-color: #ffffff transparent transparent;
-}
-
-.milestone-tooltip.tooltip-down {
-    top: calc(100% + 14px);
-    left: 50%;
-    transform: translateX(-50%) translateY(-8px);
-}
-
-.milestone-tooltip.tooltip-down::after {
-    content: '';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border-width: 0 8px 8px;
-    border-style: solid;
-    border-color: transparent transparent #ffffff;
-}
-
-/* Tooltip chặng đích lệch trái một chút để không tràn cạnh phải */
-.milestone-tooltip.goal-tip {
-    transform: translateX(-70%) translateY(8px);
-}
-
-.milestone-tooltip.goal-tip::after {
-    left: 70%;
-}
-
-/* Kích hoạt hiển thị Tooltip khi Hover hoặc khi Active */
-.road-milestone:hover .milestone-tooltip,
-.road-milestone:focus .milestone-tooltip,
-.road-milestone.active .milestone-tooltip {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    z-index: 60;
-}
-
-.road-milestone:hover .milestone-tooltip.tooltip-up,
-.road-milestone:focus .milestone-tooltip.tooltip-up,
-.road-milestone.active .milestone-tooltip.tooltip-up {
-    transform: translateX(-50%) translateY(0);
-}
-
-.road-milestone:hover .milestone-tooltip.tooltip-down,
-.road-milestone:focus .milestone-tooltip.tooltip-down,
-.road-milestone.active .milestone-tooltip.tooltip-down {
-    transform: translateX(-50%) translateY(0);
-}
-
-.road-milestone:hover .milestone-tooltip.goal-tip,
-.road-milestone:focus .milestone-tooltip.goal-tip,
-.road-milestone.active .milestone-tooltip.goal-tip {
-    transform: translateX(-70%) translateY(0);
-}
-
-/* Riêng mốc 2021: Tooltip mở dạt sang phải để tuyệt đối không bị khuất mép trái */
-.road-milestone.pos-2021 .milestone-tooltip {
-    left: -10px;
-    transform: translateX(0) translateY(8px);
-}
-
-.road-milestone.pos-2021 .milestone-tooltip::after {
-    left: 32px;
-    transform: none;
-}
-
-.road-milestone.pos-2021:hover .milestone-tooltip,
-.road-milestone.pos-2021:focus .milestone-tooltip,
-.road-milestone.pos-2021.active .milestone-tooltip {
-    transform: translateX(0) translateY(0);
-}
-
-.tooltip-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.tooltip-badge {
-    font-family: 'Space Grotesk', monospace;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    color: var(--bk-blue);
-    background: var(--bk-sky);
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
-}
-
-.tooltip-badge.gold {
-    color: #92400e;
-    background: #fef3c7;
-}
-
-.tooltip-phase {
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
-    text-transform: uppercase;
-}
-
-.tooltip-phase.start { background: #e0f2fe; color: #0284c7; }
-.tooltip-phase.training { background: #fef3c7; color: #b45309; }
-.tooltip-phase.core { background: #e0e7ff; color: #4338ca; }
-.tooltip-phase.lab { background: #dbeafe; color: #1d4ed8; }
-.tooltip-phase.field { background: #dcfce7; color: #15803d; }
-.tooltip-phase.goal { background: #fef3c7; color: #92400e; }
-
-.tooltip-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--bk-navy);
-    margin: 0 0 6px;
-    line-height: 1.35;
-}
-
-.tooltip-desc {
-    font-size: 0.82rem;
-    color: var(--text-muted);
-    line-height: 1.5;
-    margin: 0 0 10px;
-}
-
-.tooltip-meta {
-    font-size: 0.74rem;
-    font-weight: 600;
-    color: var(--bk-blue);
-    padding-top: 8px;
-    border-top: 1px dashed rgba(0, 51, 102, 0.12);
-}
-
-.tooltip-meta.gold {
-    color: #b45309;
-    font-weight: 700;
-}
-
-/* ==========================================================================
-   BẢNG TIÊU ĐIỂM TÓM TẮT CHẶNG ĐANG CHỌN (SPOTLIGHT CARD)
-   ========================================================================== */
-.road-spotlight-card {
-    background: #ffffff;
-    border: 1.5px solid rgba(0, 163, 224, 0.28);
-    border-top: 4px solid var(--bk-blue);
-    border-radius: 20px;
-    padding: 24px 30px;
-    box-shadow: 0 8px 28px rgba(0, 40, 85, 0.08);
-    margin-top: 18px;
-    transition: all 0.28s ease;
-}
-
-.spotlight-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin-bottom: 18px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid rgba(0, 51, 102, 0.08);
-}
-
-.spotlight-pills {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.spotlight-step-pill {
-    font-family: 'Space Grotesk', monospace;
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--bk-blue);
-    letter-spacing: 0.8px;
-}
-
-.spotlight-phase-pill {
-    font-size: 0.74rem;
-    font-weight: 700;
-    color: #ffffff;
-    background: var(--bk-blue);
-    padding: 4px 12px;
-    border-radius: var(--radius-pill);
-    text-transform: uppercase;
-}
-
-.spotlight-selector {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.stage-nav-btn {
-    border: 1.5px solid var(--border-light);
-    background: #ffffff;
-    color: var(--text-body);
-    font-family: 'Space Grotesk', monospace;
-    font-weight: 700;
-    font-size: 0.82rem;
-    padding: 7px 16px;
-    border-radius: var(--radius-pill);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.stage-nav-btn:hover {
-    border-color: var(--bk-cyan);
-    color: var(--bk-blue);
-    background: #f0f7ff;
-    transform: translateY(-2px);
-}
-
-.stage-nav-btn.active {
-    background: var(--bk-blue);
-    color: #ffffff;
-    border-color: var(--bk-blue);
-    box-shadow: 0 4px 14px rgba(0, 51, 102, 0.25);
-}
-
-.spotlight-body {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
-}
-
-.spotlight-icon-col {
-    flex-shrink: 0;
-}
-
-.spotlight-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: var(--radius-md);
-    background: #ffffff;
-    border: 1px solid rgba(0, 51, 102, 0.12);
-    box-shadow: var(--shadow-soft);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.8rem;
-}
-
-.spotlight-content-col {
-    flex: 1;
-}
-
-.spotlight-title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--bk-navy);
-    margin: 0 0 6px;
-    line-height: 1.35;
-}
-
-.spotlight-desc {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    line-height: 1.6;
-    margin: 0 0 12px;
-}
-
-.spotlight-footer-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    font-size: 0.82rem;
-}
-
-.spotlight-meta-tag {
-    color: var(--bk-blue);
-    font-weight: 700;
-}
-
-.spotlight-hint {
-    color: var(--text-muted);
-    font-size: 0.78rem;
-}
-
 /* ==========================================
    EVENT ACTIONS CLUSTER (LỊCH & BẢN ĐỒ)
    ========================================== */
 .event-actions-cluster {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
     margin-top: 18px;
 }
@@ -1890,50 +2212,63 @@ h1, h2, h3, .serif-heading {
 .btn-event-pill {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     gap: 6px;
-    padding: 10px 18px;
+    min-height: 52px;
+    padding: 8px 12px;
     border-radius: var(--radius-pill);
-    font-size: 0.86rem;
+    font-size: 0.8rem;
+    line-height: 1.25;
     font-weight: 700;
     text-decoration: none;
     border: 1.5px solid transparent;
     cursor: pointer;
-    transition: all 0.22s ease;
+    white-space: normal;
+    transition: all 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .btn-event-pill.btn-cal {
-    background: var(--bk-blue);
+    background: linear-gradient(135deg, #003366 0%, #002347 100%);
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2);
+    border-color: rgba(125, 211, 252, 0.45);
+    box-shadow: 0 6px 18px rgba(0, 51, 102, 0.24);
 }
 
 .btn-event-pill.btn-cal:hover {
-    background: var(--bk-navy);
+    background: linear-gradient(135deg, #004488 0%, #002855 100%);
+    border-color: #7dd3fc;
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 51, 102, 0.3);
+    box-shadow: 0 10px 22px rgba(0, 51, 102, 0.32);
 }
 
 .btn-event-pill.btn-map {
-    background: var(--bk-sky);
-    color: var(--bk-blue);
-    border-color: var(--border-cyan);
+    background: linear-gradient(135deg, #e0f2fe 0%, #cffafe 100%);
+    color: var(--bk-navy);
+    border-color: rgba(0, 163, 224, 0.52);
+    box-shadow: 0 6px 16px rgba(0, 163, 224, 0.14);
 }
 
 .btn-event-pill.btn-map:hover {
-    background: #d0ebff;
+    background: linear-gradient(135deg, #bae6fd 0%, #a5f3fc 100%);
+    border-color: var(--bk-blue);
     transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 163, 224, 0.24);
 }
 
 .btn-event-pill.btn-copy {
     background: #ffffff;
-    color: var(--text-body);
-    border-color: var(--border-light);
+    color: var(--bk-navy);
+    border-color: rgba(0, 80, 157, 0.34);
+    box-shadow: 0 6px 16px rgba(0, 40, 85, 0.08);
 }
 
 .btn-event-pill.btn-copy:hover {
+    background: #f0f9ff;
     border-color: var(--bk-cyan);
     color: var(--bk-blue);
     transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 163, 224, 0.16);
 }
 
 /* ==========================================
@@ -1955,7 +2290,7 @@ h1, h2, h3, .serif-heading {
 }
 
 .wishes-block-title {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
     font-size: 1.35rem;
     font-weight: 700;
     color: var(--bk-navy);
@@ -2092,40 +2427,66 @@ h1, h2, h3, .serif-heading {
     right: 24px;
     z-index: 999;
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     align-items: flex-end;
-    gap: 10px;
 }
 
 .fab-main-btn {
+    position: relative;
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--bk-blue), var(--bk-cyan));
+    background: linear-gradient(135deg, #003366 0%, #0077c8 55%, var(--bk-cyan) 100%);
     color: #ffffff;
-    border: 2px solid rgba(255, 255, 255, 0.85);
-    font-size: 1.4rem;
+    border: 2px solid rgba(255, 255, 255, 0.88);
+    font-size: 1.38rem;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 8px 24px rgba(0, 51, 102, 0.35);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 10px 26px rgba(0, 51, 102, 0.34), 0 0 0 0 rgba(0, 163, 224, 0.35);
+    animation: fabAura 3s infinite ease-in-out;
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
 }
 
-.fab-main-btn:hover {
-    transform: scale(1.12) rotate(10deg);
-    box-shadow: 0 12px 32px rgba(0, 163, 224, 0.5);
+@keyframes fabAura {
+    0%, 100% { box-shadow: 0 10px 26px rgba(0, 51, 102, 0.34), 0 0 0 0 rgba(0, 163, 224, 0.32); }
+    50% { box-shadow: 0 12px 30px rgba(0, 51, 102, 0.38), 0 0 0 7px rgba(0, 163, 224, 0); }
+}
+
+.fab-main-icon {
+    display: inline-block;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.celebrate-fab-group:hover .fab-main-btn,
+.celebrate-fab-group.active .fab-main-btn {
+    transform: translateY(-2px) scale(1.06);
+    box-shadow: 0 14px 32px rgba(0, 163, 224, 0.45);
+}
+
+.celebrate-fab-group:hover .fab-main-icon,
+.celebrate-fab-group.active .fab-main-icon {
+    transform: rotate(12deg) scale(1.1);
+}
+
+.fab-main-btn:active {
+    transform: scale(0.94);
 }
 
 .fab-menu {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    padding-bottom: 12px;
     display: flex;
     flex-direction: column;
+    align-items: flex-end;
     gap: 8px;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(10px) scale(0.9);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(10px) scale(0.94);
+    transition: opacity 0.24s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .celebrate-fab-group:hover .fab-menu,
@@ -2136,27 +2497,282 @@ h1, h2, h3, .serif-heading {
 }
 
 .fab-action-btn {
-    background: #ffffff;
-    border: 1px solid var(--border-light);
-    color: var(--bk-navy);
-    padding: 8px 16px;
+    min-width: 152px;
+    min-height: 42px;
+    padding: 9px 18px;
     border-radius: var(--radius-pill);
-    font-size: 0.84rem;
+    font-size: 0.86rem;
     font-weight: 700;
-    box-shadow: 0 4px 16px rgba(0, 40, 85, 0.15);
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.2s ease;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+        opacity 0.24s ease,
+        transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+        background 0.22s ease,
+        color 0.22s ease,
+        border-color 0.22s ease,
+        box-shadow 0.22s ease;
 }
 
-.fab-action-btn:hover {
+.fab-action-btn.caps {
+    background: linear-gradient(135deg, #0095d9 0%, #00509d 100%);
+    color: #ffffff;
+    border: 1.5px solid rgba(186, 230, 253, 0.72);
+    box-shadow: 0 8px 22px rgba(0, 119, 200, 0.36);
+}
+
+.fab-action-btn.fireworks {
+    background: linear-gradient(135deg, #002855 0%, #004385 100%);
+    color: #ffd166;
+    border: 1.5px solid rgba(255, 209, 102, 0.68);
+    box-shadow: 0 8px 22px rgba(0, 40, 85, 0.36);
+}
+
+.celebrate-fab-group:hover .fab-action-btn,
+.celebrate-fab-group.active .fab-action-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.celebrate-fab-group:hover .fab-action-btn:nth-child(1),
+.celebrate-fab-group.active .fab-action-btn:nth-child(1) {
+    transition-delay: 0.04s, 0.04s, 0s, 0s, 0s, 0s;
+}
+
+.fab-action-btn.caps:hover {
+    background: linear-gradient(135deg, #00b4f5 0%, #0066b3 100%);
+    border-color: #ffffff;
+    transform: translateX(-4px) scale(1.02);
+    box-shadow: 0 12px 26px rgba(0, 163, 224, 0.48);
+}
+
+.fab-action-btn.fireworks:hover {
+    background: linear-gradient(135deg, #003570 0%, #0053a0 100%);
+    color: #ffffff;
+    border-color: #ffd166;
+    transform: translateX(-4px) scale(1.02);
+    box-shadow: 0 12px 26px rgba(255, 209, 102, 0.35);
+}
+
+.fab-action-btn:active {
+    transform: scale(0.96);
+}
+
+/* ==========================================
+   BACK TO TOP BUTTON (CUỘN LÊN ĐẦU TRANG)
+   ========================================== */
+.back-to-top-btn {
+    position: fixed;
+    bottom: 26px;
+    right: 88px;
+    z-index: 998;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    color: var(--bk-navy);
+    border: 1.5px solid rgba(0, 51, 102, 0.16);
+    box-shadow: 0 8px 22px rgba(0, 40, 85, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(14px) scale(0.9);
+    transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), background 0.22s ease, color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.back-to-top-btn svg {
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.back-to-top-btn.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+body.envelope-locked .back-to-top-btn,
+body.envelope-locked .celebrate-fab-group {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.back-to-top-btn:hover {
     background: var(--bk-navy);
     color: #ffffff;
-    transform: translateX(-4px);
-    box-shadow: 0 6px 20px rgba(0, 51, 102, 0.25);
+    border-color: var(--bk-cyan);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0, 51, 102, 0.28);
+}
+
+.back-to-top-btn:hover svg {
+    transform: translateY(-2px);
+}
+
+.back-to-top-btn:active {
+    transform: scale(0.94);
+}
+
+/* Thống nhất hiệu ứng active & focus-visible cho toàn bộ nút bấm */
+.btn-bk-primary:active,
+.btn-bk-outline:active,
+.btn-bk-share:active,
+.btn-event-pill:active,
+.btn-spark-tribute:active,
+.btn-guestbook-submit:active,
+.btn-download-pass:active,
+.letter-tab-btn:active,
+.guide-tab-btn:active,
+.deck-nav-btn:active {
+    transform: translateY(0) scale(0.97);
+}
+
+button:focus-visible,
+.btn-bk-primary:focus-visible,
+.btn-bk-outline:focus-visible,
+.btn-event-pill:focus-visible,
+.nav-btn-rsvp:focus-visible {
+    outline: 2px solid var(--bk-cyan);
+    outline-offset: 3px;
+}
+
+/* ==========================================================================
+   CẨM NANG ĐI LỄ CAMPUS BÁCH KHOA (EVENT GUIDE TABS)
+   ========================================================================== */
+.campus-guide-box {
+    margin-top: 16px;
+    background: #f8fbff;
+    border: 1.5px solid rgba(0, 119, 200, 0.28);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 4px 14px rgba(0, 40, 85, 0.05);
+}
+
+.campus-guide-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.guide-tab-btn {
+    background: #ffffff;
+    border: 1.5px solid rgba(0, 80, 157, 0.28);
+    color: var(--bk-navy);
+    font-size: 0.78rem;
+    font-weight: 700;
+    min-height: 38px;
+    padding: 6px 10px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 40, 85, 0.06);
+    transition: all 0.2s ease;
+}
+
+.guide-tab-btn:hover {
+    border-color: var(--bk-cyan);
+    color: var(--bk-blue);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 163, 224, 0.14);
+}
+
+.guide-tab-btn.active {
+    background: linear-gradient(135deg, #002855 0%, #00509d 100%);
+    border-color: rgba(125, 211, 252, 0.75);
+    color: #ffffff;
+    box-shadow: 0 6px 14px rgba(0, 40, 85, 0.22);
+}
+
+.campus-guide-content {
+    font-size: 0.84rem;
+    color: #334155;
+    line-height: 1.55;
+    padding-top: 4px;
+}
+
+/* ==========================================================================
+   GỢI Ý LỜI CHÚC NHANH & TẢI THẺ LƯU NIỆM PNG (GUESTBOOK UPGRADE)
+   ========================================================================== */
+.quick-wish-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.wish-chip-btn {
+    background: #f0f8ff;
+    border: 1.5px solid rgba(0, 119, 200, 0.34);
+    color: var(--bk-navy);
+    font-size: 0.77rem;
+    font-weight: 700;
+    padding: 6px 13px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 40, 85, 0.06);
+    transition: all 0.18s ease;
+}
+
+.wish-chip-btn:hover {
+    background: var(--bk-blue);
+    border-color: var(--bk-blue);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.receipt-footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(0, 51, 102, 0.16);
+}
+
+.receipt-pass-id {
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.btn-download-pass {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #002855 0%, #00448a 100%);
+    color: #ffffff;
+    border: 1px solid rgba(0, 163, 224, 0.4);
+    border-radius: var(--radius-pill);
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 40, 85, 0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-download-pass:hover {
+    background: linear-gradient(135deg, #003875 0%, #0077c8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 119, 200, 0.32);
 }
 
 /* ==========================================================================
@@ -2168,7 +2784,7 @@ h1, h2, h3, .serif-heading {
     }
 
     .hero-showcase,
-    .engineer-dossier-card,
+    .story-showcase-grid,
     .event-box-clean,
     .guestbook-clean-grid {
         grid-template-columns: 1fr;
@@ -2181,6 +2797,12 @@ h1, h2, h3, .serif-heading {
 
     .photo-gallery-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .gallery-card,
+    .gallery-card:nth-child(1),
+    .gallery-card:nth-child(2) {
+        grid-column: span 1;
     }
 
     .gallery-card.featured-wide {
@@ -2197,18 +2819,16 @@ h1, h2, h3, .serif-heading {
         padding: 0 20px;
     }
 
-    .road-interactive-container {
-        padding: 18px 16px;
-    }
-
-    .spotlight-body {
-        flex-direction: column;
-        gap: 12px;
-    }
-
     .celebrate-fab-group {
         bottom: max(20px, env(safe-area-inset-bottom));
         right: 18px;
+    }
+
+    .back-to-top-btn {
+        width: 44px;
+        height: 44px;
+        bottom: max(23px, calc(env(safe-area-inset-bottom) + 3px));
+        right: 78px;
     }
 
     .toast-popup {
@@ -2217,42 +2837,99 @@ h1, h2, h3, .serif-heading {
 }
 
 @media (max-width: 640px) {
-    .road-stage-wrapper {
-        margin: 0 -8px;
-        padding: 0 8px 10px;
+    .gratitude-letter-card {
+        padding: 20px 18px;
     }
 
-    .spotlight-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
+    .memory-deck-panel {
+        padding: 20px 16px 18px;
     }
 
-    .spotlight-selector {
+    .memory-card-stage {
+        min-height: 200px;
+    }
+
+    .letter-tabs {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        flex: 1 1 100%;
+    }
+
+    .letter-tab-btn {
+        font-size: 0.74rem;
+        min-height: 36px;
+        padding: 6px 6px;
+    }
+
+    .campus-guide-tabs,
+    .event-actions-cluster {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .btn-event-pill,
+    .guide-tab-btn {
         width: 100%;
-        overflow-x: auto;
-        padding-bottom: 4px;
-    }
-
-    .stage-nav-btn {
-        padding: 4px 10px;
-        font-size: 0.76rem;
     }
 
     .photo-gallery-grid {
         grid-template-columns: 1fr;
     }
 
+    .gallery-card,
+    .gallery-card:nth-child(1),
+    .gallery-card:nth-child(2),
     .gallery-card.featured-wide {
         grid-column: span 1;
     }
 
+    /* 3 Chỉ số nhanh thu gọn thành 1 hàng ngang 3 cột thay vì 3 khối đứng chiếm chỗ */
     .hero-quick-stats {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .stat-chip {
+        padding: 10px 4px;
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 1.45rem;
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+        line-height: 1.25;
+    }
+
+    /* 4 nút hành động Hero chuyển thành lưới 2x2 đều nhau, chiều cao đồng bộ */
+    .hero-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .hero-buttons .btn-bk-primary,
+    .hero-buttons .btn-bk-celebrate,
+    .hero-buttons .btn-bk-fireworks,
+    .hero-buttons .btn-bk-share {
+        width: 100%;
+        min-width: 0;
+        min-height: 48px;
+        justify-content: center;
+        text-align: center;
+        padding: 8px 10px;
+        font-size: 0.76rem;
+        line-height: 1.25;
+        white-space: normal;
     }
 
     .hero-main-title {
-        font-size: 2.6rem;
+        font-size: 2.4rem;
     }
 
     .footer-bottom-line {
@@ -2264,18 +2941,6 @@ h1, h2, h3, .serif-heading {
 }
 
 @media (max-width: 480px) {
-    .hero-buttons {
-        flex-direction: column;
-    }
-
-    .btn-bk-primary,
-    .btn-bk-celebrate,
-    .btn-bk-fireworks,
-    .btn-bk-share {
-        width: 100%;
-        justify-content: center;
-    }
-
     .brand-name {
         font-size: 1.02rem;
     }

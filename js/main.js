@@ -18,7 +18,11 @@ document.addEventListener("DOMContentLoaded", () => {
     initRecentWishes();
     initGuestbook();
     initPhotoModal();
-    initRoadmapPathway();
+    initGratitudeStory();
+    initCampusGuide();
+    initQuickWishesAndPass();
+    initEnvelopeExperience();
+    initBackToTop();
 
     // Hỗ trợ tự động kích hoạt hiệu ứng nếu có tham số trên URL
     try {
@@ -171,7 +175,41 @@ function initGuestbook() {
     const attendanceInput = document.getElementById("guest-attendance");
     const messageInput = document.getElementById("guest-message");
 
-    // Tự động xóa cảnh báo lỗi khi người dùng bắt đầu chỉnh sửa
+    // Tự động xóa cảnh báo lỗi & cập nhật Thẻ Lưu Niệm theo thời gian thực
+    const syncLiveReceipt = () => {
+        const liveName = nameInput ? nameInput.value.trim() : "";
+        const liveRel = relationInput ? relationInput.value : "";
+        const liveAtt = attendanceInput ? attendanceInput.value : "yes";
+        const liveMsg = messageInput ? messageInput.value.trim() : "";
+
+        if (guestNameDisplay) {
+            if (liveName) {
+                guestNameDisplay.textContent = liveRel ? `${liveName} (${liveRel})` : liveName;
+            } else {
+                guestNameDisplay.textContent = "Bạn Thân Mến";
+            }
+        }
+
+        if (statusDisplay) {
+            if (liveAtt === "yes") {
+                statusDisplay.textContent = "✨ Sẽ hiện diện chung vui cùng Phương";
+                statusDisplay.style.color = "var(--bk-blue)";
+            } else if (liveAtt === "maybe") {
+                statusDisplay.textContent = "⏳ Sẽ cố gắng sắp xếp ghé qua";
+                statusDisplay.style.color = "var(--bk-cyan)";
+            } else {
+                statusDisplay.textContent = "💌 Gửi lời chúc mừng từ phương xa";
+                statusDisplay.style.color = "var(--text-muted)";
+            }
+        }
+
+        if (quoteDisplay) {
+            quoteDisplay.textContent = liveMsg
+                ? `"${liveMsg}"`
+                : `"Chúc bạn luôn giữ trọn ngọn lửa nhiệt huyết, bền bỉ và gặt hái nhiều thành công rực rỡ trên con đường sự nghiệp!"`;
+        }
+    };
+
     const clearError = () => {
         if (alertBox) {
             alertBox.style.display = "none";
@@ -179,10 +217,13 @@ function initGuestbook() {
         }
         if (nameInput) nameInput.classList.remove("input-has-error");
         if (messageInput) messageInput.classList.remove("input-has-error");
+        syncLiveReceipt();
     };
 
     if (nameInput) nameInput.addEventListener("input", clearError);
     if (messageInput) messageInput.addEventListener("input", clearError);
+    if (relationInput) relationInput.addEventListener("change", syncLiveReceipt);
+    if (attendanceInput) attendanceInput.addEventListener("change", syncLiveReceipt);
 
     form.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -216,7 +257,7 @@ function initGuestbook() {
 
         clearError();
 
-        const finalName = name || "Quý Khách";
+        const finalName = name || "Bạn";
         const finalMessage = message || "Chúc Kỹ sư Phạm Minh Phương luôn tràn đầy năng lượng, giữ trọn nhiệt huyết Bách Khoa và vươn xa trên con đường sự nghiệp!";
 
         if (guestNameDisplay) {
@@ -412,11 +453,21 @@ function initCelebration() {
 
     if (fabMainBtn) {
         fabMainBtn.addEventListener("click", () => {
-            if (fabGroup) fabGroup.classList.toggle("active");
+            if (fabGroup) {
+                const isOpen = fabGroup.classList.toggle("active");
+                fabMainBtn.setAttribute("aria-expanded", String(isOpen));
+            }
             if (celebrationEngine) celebrationEngine.comboCelebration();
             showToast("🎉 Chúc mừng Tân Kỹ sư Phạm Minh Phương!");
         });
     }
+
+    document.addEventListener("click", (e) => {
+        if (fabGroup && fabGroup.classList.contains("active") && !fabGroup.contains(e.target)) {
+            fabGroup.classList.remove("active");
+            if (fabMainBtn) fabMainBtn.setAttribute("aria-expanded", "false");
+        }
+    });
 }
 
 // ==========================================================================
@@ -460,10 +511,10 @@ function initShareButton() {
 }
 
 // ==========================================================================
-// 7. HIỆU ỨNG THẺ KỸ SƯ 3D TILT CARD (INTERACTIVE PERSPECTIVE)
+// 7. HIỆU ỨNG THẺ CHÂN DUNG 3D HOLOGRAPHIC TILT (INTERACTIVE PERSPECTIVE)
 // ==========================================================================
 function initTiltCard() {
-    const card = document.querySelector(".engineer-pass-badge");
+    const card = document.getElementById("hero-portrait-card") || document.querySelector(".hero-portrait-card");
     if (!card) return;
 
     card.addEventListener("mousemove", (e) => {
@@ -473,10 +524,14 @@ function initTiltCard() {
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
 
-        const rotateX = ((y - centerY) / centerY) * -7;
-        const rotateY = ((x - centerX) / centerX) * 7;
+        const rotateX = ((y - centerY) / centerY) * -6;
+        const rotateY = ((x - centerX) / centerX) * 6;
+        const glareX = (x / rect.width) * 100;
+        const glareY = (y / rect.height) * 100;
 
-        card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-2px)`;
+        card.style.setProperty("--glare-x", `${glareX.toFixed(1)}%`);
+        card.style.setProperty("--glare-y", `${glareY.toFixed(1)}%`);
+        card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-4px)`;
     });
 
     card.addEventListener("mouseleave", () => {
@@ -484,145 +539,388 @@ function initTiltCard() {
     });
 }
 
-
 // ==========================================================================
-// 8. ĐIỀU KHIỂN CON ĐƯỜNG ROADMAP & HOVER TÓM TẮT GIAI ĐOẠN
+// 7B. TRẠM TIẾP SỨC NĂNG LƯỢNG TÂN KỸ SƯ (INTERACTIVE ENERGY REACTOR)
 // ==========================================================================
-const ROAD_STAGES_DATA = [
-    {
-        year: "2021",
-        step: "CHẶNG 01 · NĂM 2021",
-        phase: "KHỞI ĐẦU",
-        icon: "🏛️",
-        title: "Bước Vào Giảng Đường Bách Khoa",
-        desc: "Đặt chân qua Cổng A2 (268 Lý Thường Kiệt), chính thức trở thành tân sinh viên ngành Kỹ thuật Năng lượng Khóa K21.",
-        meta: "📍 Cột mốc xuất phát · 268 Lý Thường Kiệt"
-    },
-    {
-        year: "2022",
-        step: "CHẶNG 02 · NĂM 2022",
-        phase: "TÔI LUYỆN",
-        icon: "🏕️",
-        title: "Thao Trường Dĩ An & Đại Cương",
-        desc: "Mùa hè quân sự áo lính tôi luyện kỷ luật và tình đồng đội; vượt qua các kỳ thi Toán - Lý kỹ thuật nền tảng vững chắc.",
-        meta: "🎖️ Quân sự Dĩ An · Cơ sở 2"
-    },
-    {
-        year: "2023",
-        step: "CHẶNG 03 · NĂM 2023",
-        phase: "CƠ SỞ NGÀNH",
-        icon: "⚡",
-        title: "Cơ Sở Kỹ Thuật Năng Lượng",
-        desc: "Tiếp cận các học phần Nhiệt động lực học, Truyền nhiệt, Nguyên lý hệ thống năng lượng và thí nghiệm chuyên ngành.",
-        meta: "🔬 Làm chủ nguyên lý cốt lõi"
-    },
-    {
-        year: "2024",
-        step: "CHẶNG 04 · NĂM 2024",
-        phase: "CHUYÊN SÂU",
-        icon: "🔋",
-        title: "Phòng Lab Pin & Điện Mặt Trời",
-        desc: "Đo đạc kiểm tra tế bào pin Lithium, nghiên cứu điện hóa và thiết kế mô phỏng các giải pháp năng lượng mặt trời.",
-        meta: "⚡ Phòng Lab Điện Hóa & Pin"
-    },
-    {
-        year: "2025",
-        step: "CHẶNG 05 · NĂM 2025",
-        phase: "THỰC CHIẾN",
-        icon: "🌱",
-        title: "Thực Tập Doanh Nghiệp & Net Zero",
-        desc: "Mô phỏng ổn định lưới điện phân tán, tham gia giải pháp năng lượng sạch thực tế hướng đến mục tiêu Net Zero.",
-        meta: "🌍 Dự án & Doanh nghiệp"
-    },
-    {
-        year: "2026",
-        step: "ĐÍCH ĐẾN · NĂM 2026",
-        phase: "CÁN ĐÍCH",
-        icon: "🎓",
-        title: "Vinh Danh Tân Kỹ Sư Năng Lượng",
-        desc: "Bảo vệ Khóa luận tốt nghiệp xuất sắc; chính thức nhận bằng Tân Kỹ sư Bách Khoa trong lễ vinh danh ngày 28/11/2026.",
-        meta: "🏆 Hội trường A5 · 28/11/2026"
-    }
-];
+function playEnergyChargeSound(boostCount) {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
 
-function initRoadmapPathway() {
-    const milestones = document.querySelectorAll(".road-milestone");
-    const navButtons = document.querySelectorAll(".stage-nav-btn");
-    const spotlightCard = document.getElementById("road-spotlight-card");
+        const baseFreq = 440 + Math.min(boostCount, 12) * 35;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(baseFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.45, now + 0.14);
 
-    if (!milestones.length || !spotlightCard) return;
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.11, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
 
-    const stepEl = document.getElementById("spotlight-step");
-    const phaseEl = document.getElementById("spotlight-phase");
-    const iconEl = document.getElementById("spotlight-icon");
-    const titleEl = document.getElementById("spotlight-title");
-    const descEl = document.getElementById("spotlight-desc");
-    const metaEl = document.getElementById("spotlight-meta");
-
-    function setActiveStage(index) {
-        const data = ROAD_STAGES_DATA[index];
-        if (!data) return;
-
-        milestones.forEach((m, idx) => {
-            if (idx === index) {
-                m.classList.add("active");
-            } else {
-                m.classList.remove("active");
-            }
-        });
-
-        navButtons.forEach((b, idx) => {
-            if (idx === index) {
-                b.classList.add("active");
-            } else {
-                b.classList.remove("active");
-            }
-        });
-
-        spotlightCard.style.opacity = "0.75";
-        spotlightCard.style.transform = "translateY(2px)";
-
-        setTimeout(() => {
-            if (stepEl) stepEl.textContent = data.step;
-            if (phaseEl) phaseEl.textContent = data.phase;
-            if (iconEl) iconEl.textContent = data.icon;
-            if (titleEl) titleEl.textContent = data.title;
-            if (descEl) descEl.textContent = data.desc;
-            if (metaEl) metaEl.textContent = data.meta;
-
-            spotlightCard.style.opacity = "1";
-            spotlightCard.style.transform = "translateY(0)";
-        }, 80);
-    }
-
-    milestones.forEach((m, idx) => {
-        m.addEventListener("mouseenter", () => {
-            setActiveStage(idx);
-        });
-
-        m.addEventListener("click", () => {
-            setActiveStage(idx);
-            if (navigator.vibrate) navigator.vibrate(8);
-        });
-
-        m.addEventListener("focus", () => {
-            setActiveStage(idx);
-        });
-    });
-
-    navButtons.forEach((btn, idx) => {
-        btn.addEventListener("click", () => {
-            setActiveStage(idx);
-            const targetMilestone = milestones[idx];
-            if (targetMilestone) {
-                targetMilestone.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-            }
-            if (navigator.vibrate) navigator.vibrate(8);
-        });
-    });
-
-    setActiveStage(5);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+    } catch (e) {}
 }
+
+function initGratitudeStory() {
+    const tabBtns = document.querySelectorAll(".letter-tab-btn");
+    const letterPaper = document.getElementById("letter-paper-body");
+    const salutationEl = document.getElementById("letter-salutation");
+    const letterTextEl = document.getElementById("letter-text");
+    const sparkBtn = document.getElementById("btn-spark-tribute");
+    const sparkCounterEl = document.getElementById("spark-counter");
+
+    const LETTERS = {
+        family: {
+            salutation: "Kính gửi Ba Mẹ và Gia Đình thân yêu,",
+            text: "Năm năm dưới mái trường Bách Khoa là hành trình dài đầy thử thách nhưng luôn ấm áp vì có gia đình làm điểm tựa. Cảm ơn Ba Mẹ đã luôn tin tưởng, hy sinh thầm lặng và tiếp thêm nghị lực để con có thể tự hào khoác lên mình tấm áo Tân Kỹ sư ngày hôm nay."
+        },
+        teachers: {
+            salutation: "Kính gửi Quý Thầy Cô Khoa & Bộ môn,",
+            text: "Em xin gửi lời tri ân sâu sắc tới Quý Thầy Cô đã tận tâm truyền đạt tri thức, dìu dắt em qua từng giờ thí nghiệm, đồ án chuyên ngành đến buổi bảo vệ Khóa luận tốt nghiệp. Những bài học tại Bách Khoa sẽ mãi là hành trang quý giá nhất của em."
+        },
+        friends: {
+            salutation: "Gửi những người bạn, anh chị em chiến hữu K21,",
+            text: "Cảm ơn tất cả mọi người vì đã cùng Phương đi qua những mùa quân sự Dĩ An, những đêm chạy deadline đồ án và cả những tiếng cười rộn rã sân trường. Chúc cho chúng ta sau dấu mốc 28/11 sẽ luôn giữ trọn ngọn lửa nhiệt huyết và bay thật cao!"
+        }
+    };
+
+    tabBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const key = btn.dataset.target;
+            const entry = LETTERS[key];
+            if (!entry) return;
+
+            tabBtns.forEach((b) => {
+                b.classList.toggle("active", b === btn);
+                b.setAttribute("aria-selected", b === btn ? "true" : "false");
+            });
+
+            if (letterPaper) {
+                letterPaper.classList.remove("is-switching");
+                void letterPaper.offsetWidth;
+                letterPaper.classList.add("is-switching");
+            }
+            if (salutationEl) salutationEl.textContent = entry.salutation;
+            if (letterTextEl) letterTextEl.textContent = entry.text;
+        });
+    });
+
+    if (sparkBtn && sparkCounterEl) {
+        let sparkCount = 2026;
+        let userClicks = 0;
+        try {
+            const saved = parseInt(localStorage.getItem("pmp_tribute_sparks"), 10);
+            if (!isNaN(saved) && saved >= 2026) sparkCount = saved;
+        } catch (e) {}
+
+        sparkCounterEl.textContent = sparkCount.toLocaleString("vi-VN");
+        sparkBtn.addEventListener("click", () => {
+            sparkCount += 1;
+            userClicks += 1;
+            sparkCounterEl.textContent = sparkCount.toLocaleString("vi-VN");
+            try {
+                localStorage.setItem("pmp_tribute_sparks", String(sparkCount));
+            } catch (e) {}
+
+            sparkBtn.classList.remove("is-pulsing");
+            void sparkBtn.offsetWidth;
+            sparkBtn.classList.add("is-pulsing");
+            playEnergyChargeSound(userClicks);
+
+            if (userClicks % 5 === 0 && celebrationEngine) {
+                celebrationEngine.tossCaps(8);
+            }
+            showToast(`⚡ Cảm ơn bạn đã gửi tia sáng chúc mừng thứ ${sparkCount.toLocaleString("vi-VN")}!`);
+        });
+    }
+
+    // Hộp Kỷ Vật 5 Năm (Interactive Stacked Memory Deck)
+    const MEMORIES = [
+        {
+            year: "2021",
+            icon: "🏛️",
+            title: "Ngày Đầu Bước Qua Cổng A2",
+            desc: "Nhận chiếc thẻ sinh viên Bách Khoa đầu tiên tại 268 Lý Thường Kiệt, chính thức bắt đầu thanh xuân cùng ngành Kỹ thuật Năng lượng.",
+            place: "📍 Giảng đường Lý Thường Kiệt"
+        },
+        {
+            year: "2022 – 2023",
+            icon: "🏕️",
+            title: "Dĩ An & Những Đêm Ôn Thi",
+            desc: "Mùa hè quân sự áo lính đầy nắng gió, những đêm thức trắng cùng chiến hữu giải từng bài Toán kỹ thuật và Nhiệt động lực học.",
+            place: "🎖️ Cơ sở Dĩ An & Thư viện"
+        },
+        {
+            year: "2024 – 2025",
+            icon: "🔋",
+            title: "Lab Pin Lithium & Điện Xanh",
+            desc: "Hàng trăm giờ đo đạc điện hóa, mô phỏng hệ thống điện mặt trời và những đồ án thực chiến hướng tới năng lượng bền vững.",
+            place: "⚡ Phòng Lab Điện Hóa & Năng Lượng"
+        },
+        {
+            year: "28/11/2026",
+            icon: "🎓",
+            title: "Khoảnh Khắc Vinh Danh A5",
+            desc: "Khoác lên mình chiếc áo Tân Kỹ sư trong Lễ Tốt Nghiệp tại Hội trường A5 — khép lại 5 năm sinh viên, mở ra hành trình rực rỡ mới.",
+            place: "🏆 Hội trường A5 · ĐH Bách Khoa"
+        }
+    ];
+
+    const deckCounterEl = document.getElementById("memory-deck-counter");
+    const activeCard = document.getElementById("memory-active-card");
+    const yearEl = document.getElementById("memory-year");
+    const iconEl = document.getElementById("memory-icon");
+    const titleEl = document.getElementById("memory-title");
+    const descEl = document.getElementById("memory-desc");
+    const placeEl = document.getElementById("memory-place");
+    const prevBtn = document.getElementById("memory-prev-btn");
+    const nextBtn = document.getElementById("memory-next-btn");
+    const dotBtns = document.querySelectorAll(".m-dot");
+
+    if (!activeCard) return;
+
+    let currentIdx = 0;
+
+    function renderMemory(index, animate = true) {
+        currentIdx = (index + MEMORIES.length) % MEMORIES.length;
+        const item = MEMORIES[currentIdx];
+
+        if (animate) {
+            activeCard.classList.remove("is-flipping");
+            void activeCard.offsetWidth;
+            activeCard.classList.add("is-flipping");
+        }
+
+        if (deckCounterEl) deckCounterEl.textContent = `0${currentIdx + 1} / 0${MEMORIES.length}`;
+        if (yearEl) yearEl.textContent = item.year;
+        if (iconEl) iconEl.textContent = item.icon;
+        if (titleEl) titleEl.textContent = item.title;
+        if (descEl) descEl.textContent = item.desc;
+        if (placeEl) placeEl.textContent = item.place;
+
+        activeCard.classList.toggle("is-finale", currentIdx === MEMORIES.length - 1);
+        dotBtns.forEach((dot, i) => dot.classList.toggle("active", i === currentIdx));
+    }
+
+    if (prevBtn) prevBtn.addEventListener("click", () => renderMemory(currentIdx - 1));
+    if (nextBtn) nextBtn.addEventListener("click", () => renderMemory(currentIdx + 1));
+    activeCard.addEventListener("click", () => renderMemory(currentIdx + 1));
+    activeCard.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            renderMemory(currentIdx + 1);
+        } else if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            renderMemory(currentIdx - 1);
+        }
+    });
+
+    dotBtns.forEach((dot) => {
+        dot.addEventListener("click", () => {
+            const idx = parseInt(dot.dataset.index, 10);
+            if (!isNaN(idx)) renderMemory(idx);
+        });
+    });
+
+    renderMemory(0, false);
+}
+
+// ==========================================================================
+// 7C. CẨM NANG TỌA ĐỘ CAMPUS BÁCH KHOA (INTERACTIVE EVENT TABS)
+// ==========================================================================
+function initCampusGuide() {
+    const tabBtns = document.querySelectorAll(".guide-tab-btn");
+    const contentBox = document.getElementById("campus-guide-content");
+    if (!tabBtns.length || !contentBox) return;
+
+    const GUIDE_CONTENT = {
+        parking: "<strong>Gửi xe thuận tiện:</strong> Cổng sau <strong>142 Tô Hiến Thành</strong> hoặc bãi xe <strong>268 Lý Thường Kiệt</strong> đều có bãi giữ xe máy rộng rãi; ô tô có thể đỗ dọc sân nội bộ theo hướng dẫn bảo vệ.",
+        hall: "<strong>Tọa độ Hội trường A5:</strong> Nằm ngay khu vực sân trung tâm (cạnh Nhà A4 & Thư viện). Phương sẽ đón khách và chụp ảnh lưu niệm tại sảnh trước lễ từ <strong>07:30 AM</strong>.",
+        photo: "<strong>Góc Check-in đẹp nhất:</strong> Cổng A2 268 Lý Thường Kiệt, Tượng đài Bách Khoa, hàng cây xanh sân trung tâm A5 và sảnh tòa C2 đón nắng sáng."
+    };
+
+    tabBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const key = btn.getAttribute("data-guide");
+            tabBtns.forEach((b) => {
+                b.classList.remove("active");
+                b.setAttribute("aria-selected", "false");
+            });
+            btn.classList.add("active");
+            btn.setAttribute("aria-selected", "true");
+            if (GUIDE_CONTENT[key]) {
+                contentBox.innerHTML = GUIDE_CONTENT[key];
+            }
+        });
+    });
+}
+
+// ==========================================================================
+// 7D. GỢI Ý LỜI CHÚC NHANH & TẢI THẺ LƯU NIỆM VIP (PNG CANVAS EXPORT)
+// ==========================================================================
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+    const words = text.split(/\s+/);
+    let line = "";
+    let lineCount = 0;
+
+    for (let i = 0; i < words.length; i++) {
+        const testLine = line ? `${line} ${words[i]}` : words[i];
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && i > 0) {
+            ctx.fillText(line, x, y);
+            line = words[i];
+            y += lineHeight;
+            lineCount++;
+            if (lineCount >= maxLines - 1) {
+                const remaining = words.slice(i).join(" ");
+                let truncated = remaining;
+                while (ctx.measureText(`${truncated}...`).width > maxWidth && truncated.length > 0) {
+                    truncated = truncated.slice(0, -1);
+                }
+                ctx.fillText(`${truncated}...`, x, y);
+                return;
+            }
+        } else {
+            line = testLine;
+        }
+    }
+    if (line) ctx.fillText(line, x, y);
+}
+
+function initQuickWishesAndPass() {
+    const wishChips = document.querySelectorAll(".wish-chip-btn");
+    const msgInput = document.getElementById("guest-message");
+
+    wishChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+            const wish = chip.getAttribute("data-wish");
+            if (msgInput && wish) {
+                msgInput.value = wish;
+                msgInput.dispatchEvent(new Event("input", { bubbles: true }));
+                msgInput.focus();
+            }
+        });
+    });
+
+    const downloadBtn = document.getElementById("btn-download-pass");
+    if (!downloadBtn) return;
+
+    downloadBtn.addEventListener("click", () => {
+        const guestName = (document.getElementById("receipt-guest-name")?.textContent || "Bạn Thân Mến").trim();
+        const statusText = (document.getElementById("receipt-status")?.textContent || "✨ Chung vui cùng Tân Kỹ sư").trim();
+        const quoteText = (document.getElementById("receipt-quote")?.textContent || "\"Chúc mừng tốt nghiệp!\"").trim();
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 1000;
+        canvas.height = 560;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        // Nền Royal Navy Gradient sang trọng
+        const bgGrad = ctx.createLinearGradient(0, 0, 1000, 560);
+        bgGrad.addColorStop(0, "#001936");
+        bgGrad.addColorStop(0.55, "#002855");
+        bgGrad.addColorStop(1, "#003b7a");
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, 1000, 560);
+
+        // Họa tiết lưới năng lượng chìm
+        ctx.strokeStyle = "rgba(0, 163, 224, 0.14)";
+        ctx.lineWidth = 1;
+        for (let x = 0; x <= 1000; x += 40) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, 560);
+            ctx.stroke();
+        }
+        for (let y = 0; y <= 560; y += 40) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(1000, y);
+            ctx.stroke();
+        }
+
+        // Khung viền kép Vàng + Cyan
+        ctx.strokeStyle = "#e5a93c";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(24, 24, 952, 512);
+        ctx.strokeStyle = "rgba(0, 163, 224, 0.45)";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(34, 34, 932, 492);
+
+        // Dải Header
+        ctx.fillStyle = "#38bdf8";
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillText("TRƯỜNG ĐẠI HỌC BÁCH KHOA TP.HCM · ĐHQG-HCM", 64, 78);
+
+        ctx.fillStyle = "#fde68a";
+        ctx.font = "bold 30px Georgia, serif";
+        ctx.fillText("THẺ LƯU NIỆM LỄ TỐT NGHIỆP 2026", 64, 118);
+
+        // Đường ngăn cách
+        const lineGrad = ctx.createLinearGradient(64, 0, 936, 0);
+        lineGrad.addColorStop(0, "#00a3e0");
+        lineGrad.addColorStop(1, "#e5a93c");
+        ctx.strokeStyle = lineGrad;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(64, 140);
+        ctx.lineTo(936, 140);
+        ctx.stroke();
+
+        // Thông tin khách mời & tân kỹ sư
+        ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
+        ctx.font = "18px sans-serif";
+        ctx.fillText("Kính mời / Trân trọng cảm ơn:", 64, 184);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 28px Georgia, serif";
+        ctx.fillText(guestName, 64, 220);
+
+        ctx.fillStyle = "#7dd3fc";
+        ctx.font = "bold 18px sans-serif";
+        ctx.fillText(`Trạng thái: ${statusText}`, 64, 256);
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+        ctx.font = "18px sans-serif";
+        ctx.fillText("Tân Kỹ sư: Phạm Minh Phương — Kỹ thuật Năng lượng (Khóa K2021)", 64, 290);
+
+        // Khung trích dẫn lời chúc
+        ctx.fillStyle = "rgba(0, 18, 42, 0.65)";
+        ctx.fillRect(64, 316, 872, 118);
+        ctx.fillStyle = "#00a3e0";
+        ctx.fillRect(64, 316, 6, 118);
+
+        ctx.fillStyle = "#f1f5f9";
+        ctx.font = "italic 20px Georgia, serif";
+        wrapCanvasText(ctx, quoteText, 90, 356, 820, 30, 3);
+
+        // Chân thẻ: Ngày giờ & Con dấu
+        ctx.fillStyle = "#fde68a";
+        ctx.font = "bold 17px sans-serif";
+        ctx.fillText("⏰ 08:00 AM · 28/11/2026   |   📍 Hội trường A5 · 268 Lý Thường Kiệt, Q.10", 64, 486);
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+        ctx.font = "bold 14px monospace";
+        ctx.textAlign = "right";
+        ctx.fillText("PASS ID: BK-K21-2026", 936, 486);
+
+        // Tải ảnh về máy
+        const link = document.createElement("a");
+        link.download = "The-Luu-Niem-HCMUT-2026.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+
+        showToast("📸 Đã tải xuống Thẻ Lưu Niệm PNG!");
+    });
+}
+
 
 // ==========================================================================
 // 9. BẢNG TIN LỜI CHÚC THỜI GIAN THỰC (LIVE WISHES WALL)
@@ -1150,4 +1448,122 @@ class CelebrationEngine {
             this.animationId = null;
         }
     }
+}
+
+// ==========================================================================
+// 11. TRẢI NGHIỆM MỞ PHONG THƯ GREENVELOPE-STYLE (3D ENVELOPE REVEAL)
+// ==========================================================================
+function initEnvelopeExperience() {
+    const overlay = document.getElementById("envelope-overlay");
+    const envelope = document.getElementById("bk-envelope");
+    const openBtn = document.getElementById("btn-open-envelope");
+    const continueBtn = document.getElementById("btn-continue-home");
+    const skipBtn = document.getElementById("btn-skip-envelope");
+    const replayNavBtn = document.getElementById("btn-replay-envelope");
+    const recipientDisplay = document.getElementById("env-recipient-name");
+    const cardRecipientDisplay = document.getElementById("env-card-recipient");
+
+    if (!overlay || !envelope) return;
+
+    let isAnimating = false;
+    let focusTimer = null;
+
+    // Cá nhân hóa tên khách mời nếu URL có tham số ?to=TenKhach
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const toName = params.get("to");
+        if (toName && toName.trim()) {
+            const cleanName = toName.trim();
+            if (recipientDisplay) recipientDisplay.textContent = cleanName;
+            if (cardRecipientDisplay) cardRecipientDisplay.textContent = cleanName;
+            const receiptName = document.getElementById("receipt-guest-name");
+            const guestInput = document.getElementById("guest-name");
+            if (receiptName) receiptName.textContent = cleanName;
+            if (guestInput && !guestInput.value) guestInput.value = cleanName;
+        }
+
+        // Bỏ qua hiệu ứng nếu có ?skip=1 hoặc mở trực tiếp section qua #hash
+        if (params.get("skip") === "1" || window.location.hash) {
+            overlay.classList.add("is-dismissed");
+            document.body.classList.remove("envelope-locked");
+        }
+    } catch (e) {}
+
+    function dismissOverlay(withCelebration = false) {
+        clearTimeout(focusTimer);
+        overlay.classList.add("is-dismissed");
+        document.body.classList.remove("envelope-locked");
+        if (withCelebration) {
+            if (celebrationEngine) {
+                celebrationEngine.tossCaps(14);
+            }
+            showToast("🎓 Chào mừng bạn đến với Thiệp Mời Lễ Tốt Nghiệp!");
+        }
+    }
+
+    function openEnvelopeSequence() {
+        if (isAnimating || envelope.classList.contains("is-open")) return;
+        isAnimating = true;
+
+        // Bước 1: Mở sáp niêm phong, bật nắp phong thư & rút thiệp ra
+        envelope.classList.add("is-open");
+        playCapTossSound();
+
+        // Bước 2: Phóng to tấm thiệp vào trung tâm, ẩn phong thư ra sau & hiện nút Tiếp Tục
+        clearTimeout(focusTimer);
+        focusTimer = setTimeout(() => {
+            envelope.classList.add("is-card-focused");
+            overlay.classList.add("is-card-focused");
+            if (openBtn) openBtn.hidden = true;
+            if (skipBtn) skipBtn.hidden = true;
+            if (continueBtn) continueBtn.hidden = false;
+            isAnimating = false;
+        }, 780);
+    }
+
+    function replayEnvelopeSequence() {
+        clearTimeout(focusTimer);
+        isAnimating = false;
+        envelope.classList.remove("is-open", "is-card-focused");
+        overlay.classList.remove("is-dismissed", "is-card-focused");
+        document.body.classList.add("envelope-locked");
+        if (openBtn) openBtn.hidden = false;
+        if (skipBtn) skipBtn.hidden = false;
+        if (continueBtn) continueBtn.hidden = true;
+        const fabGroup = document.getElementById("celebrate-fab-group");
+        if (fabGroup) fabGroup.classList.remove("active");
+    }
+
+    envelope.addEventListener("click", openEnvelopeSequence);
+    envelope.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openEnvelopeSequence();
+        }
+    });
+
+    if (openBtn) openBtn.addEventListener("click", openEnvelopeSequence);
+    if (continueBtn) continueBtn.addEventListener("click", () => dismissOverlay(true));
+    if (skipBtn) skipBtn.addEventListener("click", () => dismissOverlay(false));
+    if (replayNavBtn) replayNavBtn.addEventListener("click", replayEnvelopeSequence);
+}
+
+// ==========================================================================
+// 12. NÚT CUỘN LÊN ĐẦU TRANG (BACK TO TOP)
+// ==========================================================================
+function initBackToTop() {
+    const btn = document.getElementById("btn-back-to-top");
+    if (!btn) return;
+
+    function toggleVisibility() {
+        const shouldShow = window.scrollY > 360;
+        btn.classList.toggle("is-visible", shouldShow);
+    }
+
+    window.addEventListener("scroll", toggleVisibility, { passive: true });
+    btn.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    toggleVisibility();
 }

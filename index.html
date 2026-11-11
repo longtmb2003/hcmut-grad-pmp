@@ -9,14 +9,99 @@
     <meta name="theme-color" content="#002855">
     <link rel="icon" type="image/png" href="assets/icons/hcmut-logo.png">
 
-    <!-- Google Fonts: Playfair Display + Space Grotesk -->
+    <!-- Google Fonts: Be Vietnam Pro + Lora (Tối ưu hiển thị tiếng Việt) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="envelope-locked">
+
+    <!-- ==========================================
+         TRẢI NGHIỆM MỞ THIỆP PHONG THƯ GREENVELOPE-STYLE (HCMUT 2026)
+         ========================================== -->
+    <div id="envelope-overlay" class="envelope-overlay" role="dialog" aria-modal="true" aria-label="Thiệp mời Lễ Tốt Nghiệp">
+        <div class="envelope-ambient-glow" aria-hidden="true"></div>
+        <div class="envelope-backdrop-grid" aria-hidden="true"></div>
+        <div class="envelope-frame-border" aria-hidden="true"></div>
+
+        <div class="envelope-stage">
+            <div class="envelope-halo-ring" aria-hidden="true"></div>
+
+            <div class="envelope-top-caption">
+                <span class="env-badge-pill">✉️ THIỆP MỜI LỄ TỐT NGHIỆP · ĐH BÁCH KHOA TP.HCM</span>
+                <p class="env-recipient-line"><span>Kính gửi:</span> <strong id="env-recipient-name">Bạn Thân Mến</strong></p>
+            </div>
+
+            <!-- Khối Phong Thư 3D Tương Tác -->
+            <div class="bk-envelope" id="bk-envelope" tabindex="0" role="button" aria-label="Bấm để mở phong thư thiệp mời">
+                <!-- Mặt sau & Lớp lót họa tiết Năng lượng bên trong phong thư -->
+                <div class="env-back-liner">
+                    <div class="env-liner-pattern"></div>
+                </div>
+
+                <!-- Tấm Thiệp Mời Chính trượt từ trong phong thư ra -->
+                <div class="env-letter-card" id="env-letter-card">
+                    <div class="env-letter-inner-border">
+                        <div class="env-letter-header">
+                            <img src="assets/icons/hcmut-logo.png" alt="Logo HCMUT" class="env-card-logo">
+                            <span class="env-letter-school">ĐẠI HỌC BÁCH KHOA — ĐHQG-HCM</span>
+                            <span class="env-letter-title">Trân Trọng Kính Mời</span>
+                        </div>
+                        <div class="env-letter-body">
+                            <p class="env-card-to">Kính gửi: <strong id="env-card-recipient">Bạn Thân Mến</strong></p>
+                            <p class="env-letter-event">Đến tham dự Lễ Trao Bằng Tốt Nghiệp Tân Kỹ Sư</p>
+                            <h2 class="env-letter-name">Phạm Minh Phương</h2>
+                            <span class="env-letter-major">Ngành Kỹ Thuật Năng Lượng</span>
+                            <div class="env-letter-meta">
+                                <span>⏰ 08:00 AM · Thứ Bảy, 28/11/2026</span>
+                                <span>📍 Hội trường A5 · 268 Lý Thường Kiệt, Q.10</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nếp gấp túi phong thư phía trước (Left / Right / Bottom Pocket) -->
+                <div class="env-pocket-left"></div>
+                <div class="env-pocket-right"></div>
+                <div class="env-pocket-bottom">
+                    <div class="env-pocket-foil-wrap">
+                        <span class="env-pocket-foil-rule"></span>
+                        <div class="env-pocket-foil-text">PHẠM MINH PHƯƠNG</div>
+                        <span class="env-pocket-foil-rule"></span>
+                    </div>
+                </div>
+
+                <!-- Nắp gập tam giác phía trên (Lật mở 180deg trong không gian 3D) -->
+                <div class="env-top-flap" id="env-top-flap"></div>
+
+                <!-- Con dấu sáp mạ vàng niêm phong (Wax Seal Button) -->
+                <div class="env-wax-seal" id="env-wax-seal">
+                    <div class="wax-seal-ring">
+                        <span class="wax-seal-mono">BK</span>
+                        <span class="wax-seal-year">2026</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="envelope-bottom-controls">
+                <button type="button" class="btn-open-envelope" id="btn-open-envelope">
+                    <span>✨ Chạm Con Dấu Để Mở Thiệp</span>
+                </button>
+                <button type="button" class="btn-continue-home" id="btn-continue-home" hidden>
+                    <span>Tiếp Tục Vào Trang Chủ ➔</span>
+                </button>
+                <button type="button" class="btn-skip-envelope" id="btn-skip-envelope">
+                    Vào thẳng trang chủ ➔
+                </button>
+            </div>
+
+            <div class="envelope-event-whisper">
+                🎓 08:00 · Thứ Bảy, 28/11/2026 · Hội trường A5 · ĐH Bách Khoa TP.HCM
+            </div>
+        </div>
+    </div>
 
     <!-- ==========================================
          HỆ THỐNG NỀN ĐA TẦNG: AMBIENT ENERGY & BLUEPRINT BÁCH KHOA
@@ -66,10 +151,10 @@
 
         <div class="nav-menu">
             <a href="#hero">Giới Thiệu</a>
-            <a href="#profile">Hồ Sơ Kỹ Sư</a>
-            <a href="#journey">Hành Trình</a>
+            <a href="#story">Tri Ân & Ký Ức</a>
             <a href="#gallery">Khoảnh Khắc</a>
             <a href="#event">Thời Gian & Tọa Độ</a>
+            <button type="button" class="nav-btn-envelope" id="btn-replay-envelope" title="Xem lại phong thư mở thiệp">✉️ Mở Thiệp</button>
             <a href="#guestbook" class="nav-btn-rsvp">Viết Lưu Bút</a>
         </div>
     </nav>
@@ -120,8 +205,9 @@
                 </div>
             </div>
 
-            <!-- Khung Ảnh Chân Dung Lớn Nổi Bật -->
-            <div class="hero-portrait-card">
+            <!-- Khung Ảnh Chân Dung Lớn Nổi Bật (Có 3D Tilt & Holographic Glare) -->
+            <div class="hero-portrait-card" id="hero-portrait-card">
+                <div class="portrait-holo-glare" aria-hidden="true"></div>
                 <div class="portrait-img-box">
                     <img src="assets/images/photo-portrait.svg" alt="Chân dung Tân Kỹ sư Phạm Minh Phương" id="main-portrait-img">
                 </div>
@@ -137,308 +223,87 @@
 
         <main>
             <!-- ==========================================
-                 PHẦN 1: HỒ SƠ & DẤU ẤN KỸ SƯ (ID BADGE)
+                 PHẦN 1: GÓC TRI ÂN & HỘP KỶ VẬT THANH XUÂN
                  ========================================== -->
-            <section id="profile" class="content-section">
+            <section id="story" class="content-section">
                 <div class="section-head-compact">
                     <div>
-                        <span class="section-tag-bk">Bản Sắc Kỹ Sư</span>
-                        <h2 class="section-title-bold">Hồ Sơ Tân Kỹ Sư Năng Lượng</h2>
+                        <span class="section-tag-bk">Tâm Tình Ngày Tốt Nghiệp</span>
+                        <h2 class="section-title-bold">Lời Tri Ân &amp; Kỷ Vật 5 Năm</h2>
                     </div>
-                    <a href="#guestbook" class="btn-bk-outline" style="font-size: 0.88rem; padding: 10px 20px;">
-                        ✍️ Gửi Lời Chúc Mừng
-                    </a>
+                    <span class="story-period-pill">⚡ 2021 – 2026 · Dấu Ấn Bách Khoa</span>
                 </div>
 
-                <!-- Khung Hồ Sơ Đồng Nhất, Tinh Gọn, Đẳng Cấp -->
-                <div class="engineer-dossier-card">
-                    <!-- Cột Trái: Thông Tin Cá Nhân & Liên Hệ -->
-                    <div class="dossier-identity-col">
-                        <div class="dossier-school-badge">
-                            <img src="assets/icons/hcmut-logo.png" alt="Logo HCMUT" class="dossier-logo">
-                            <div>
-                                <div class="dossier-univ-name">ĐẠI HỌC BÁCH KHOA TP.HCM</div>
-                                <div class="dossier-degree-name">Kỹ thuật Năng lượng · Khóa K2021</div>
+                <div class="story-showcase-grid">
+                    <!-- Cột Trái: Thư Ngỏ Tương Tác (3 Góc Nhìn Tri Ân) -->
+                    <article class="gratitude-letter-card" aria-label="Thư ngỏ tri ân của Phạm Minh Phương">
+                        <div class="letter-top-bar">
+                            <div class="letter-tabs" role="tablist" aria-label="Chọn đối tượng gửi lời tri ân">
+                                <button type="button" class="letter-tab-btn active" data-target="family" role="tab" aria-selected="true">🏠 Gia Đình</button>
+                                <button type="button" class="letter-tab-btn" data-target="teachers" role="tab" aria-selected="false">🎓 Thầy Cô</button>
+                                <button type="button" class="letter-tab-btn" data-target="friends" role="tab" aria-selected="false">🤝 Bạn Bè</button>
                             </div>
-                            <span class="dossier-badge-code">K21 · 2026</span>
+                            <span class="letter-seal-tag">BK · K21</span>
                         </div>
 
-                        <!-- Lưới Thông Tin Cơ Bản Gọn Gàng -->
-                        <div class="dossier-meta-list">
-                            <div class="meta-row">
-                                <span class="meta-row-label">Họ và tên:</span>
-                                <strong class="meta-row-val">Phạm Minh Phương</strong>
-                            </div>
-                            <div class="meta-row">
-                                <span class="meta-row-label">Ngày sinh:</span>
-                                <span class="meta-row-val">04/10/2003</span>
-                            </div>
-                            <div class="meta-row">
-                                <span class="meta-row-label">Giới tính:</span>
-                                <span class="meta-row-val">Nam</span>
-                            </div>
-                            <div class="meta-row">
-                                <span class="meta-row-label">Đào tạo:</span>
-                                <span class="meta-row-val">268 Lý Thường Kiệt, Q.10, TP.HCM</span>
-                            </div>
+                        <div class="letter-paper-body" id="letter-paper-body">
+                            <h3 class="letter-salutation" id="letter-salutation">Kính gửi Ba Mẹ và Gia Đình thân yêu,</h3>
+                            <p class="letter-text" id="letter-text">
+                                Năm năm dưới mái trường Bách Khoa là hành trình dài đầy thử thách nhưng luôn ấm áp vì có gia đình làm điểm tựa. Cảm ơn Ba Mẹ đã luôn tin tưởng, hy sinh thầm lặng và tiếp thêm nghị lực để con có thể tự hào khoác lên mình tấm áo Tân Kỹ sư ngày hôm nay.
+                            </p>
                         </div>
 
-                        <!-- Kênh Liên Hệ Trực Tiếp -->
-                        <div class="dossier-contact-actions">
-                            <a href="https://zalo.me/0367095410" target="_blank" rel="noopener noreferrer" class="contact-action-btn zalo" title="Nhắn Zalo cùng Phương">
-                                💬 Nhắn Zalo: 0367 095 410
-                            </a>
-                            <a href="https://www.facebook.com/phuong.phamminh.90281" target="_blank" rel="noopener noreferrer" class="contact-action-btn fb" title="Facebook cá nhân của Phương">
-                                📘 Facebook: Minh Phương
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Cột Phải: 3 Trụ Cột Chuyên Môn Tinh Gọn -->
-                    <div class="dossier-pillars-col">
-                        <h3 class="dossier-pillars-heading">⚡ Định Hướng Chuyên Môn & Năng Lực</h3>
-                        <div class="dossier-pillar-item">
-                            <div class="pillar-icon-box">🔋</div>
-                            <div>
-                                <h4>Công Nghệ Pin & Điện Hóa</h4>
-                                <p>Nghiên cứu tế bào pin Lithium, phân tích điện hóa và giải pháp lưu trữ năng lượng tương lai.</p>
+                        <div class="letter-bottom-bar">
+                            <button type="button" class="btn-spark-tribute" id="btn-spark-tribute" title="Gửi thêm một tia sáng chúc mừng tới Phương">
+                                <span class="spark-icon">⚡</span>
+                                <span>Gửi Tia Sáng Chúc Mừng</span>
+                                <strong class="spark-counter" id="spark-counter">2,026</strong>
+                            </button>
+                            <div class="letter-signature">
+                                <span class="sig-label">Trân trọng,</span>
+                                <strong class="sig-name">Phạm Minh Phương</strong>
                             </div>
                         </div>
-                        <div class="dossier-pillar-item">
-                            <div class="pillar-icon-box cyan">☀️</div>
-                            <div>
-                                <h4>Năng Lượng Tái Tạo & Net Zero</h4>
-                                <p>Tối ưu hóa hệ thống quang điện mặt trời, điện gió hướng đến phát thải ròng bằng không.</p>
-                            </div>
+                    </article>
+
+                    <!-- Cột Phải: Hộp Kỷ Vật Tương Tác (Stacked Memory Deck) -->
+                    <aside class="memory-deck-panel" aria-label="Hộp kỷ vật 5 năm Bách Khoa">
+                        <div class="memory-deck-header">
+                            <span class="deck-eyebrow">HỘP KỶ VẬT K21</span>
+                            <span class="deck-counter" id="memory-deck-counter">01 / 04</span>
                         </div>
-                        <div class="dossier-pillar-item">
-                            <div class="pillar-icon-box gold">🏛️</div>
-                            <div>
-                                <h4>Dấu Ấn Bách Khoa 5 Năm</h4>
-                                <p>Được tôi luyện qua hàng chục đồ án thực tế, sẵn sàng đem tri thức cống hiến cho xã hội.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
-            <!-- ==========================================
-                 PHẦN 2: CON ĐƯỜNG HÀNH TRÌNH K2021 – 2026
-                 ========================================== -->
-            <section id="journey" class="content-section">
-                <div class="section-head-compact">
-                    <div>
-                        <span class="section-tag-bk">Hành Trình K2021 – 2026</span>
-                        <h2 class="section-title-bold">Con Đường 5 Năm Tôi Luyện Kỹ Sư</h2>
-                    </div>
-                    <div class="roadmap-badge-progress">
-                        <span class="pulse-energy-dot"></span>
-                        <span class="roadmap-progress-text">100% Hoàn Thành Lộ Trình</span>
-                    </div>
-                </div>
+                        <div class="memory-card-stage">
+                            <div class="memory-stack-ghost back-2" aria-hidden="true"></div>
+                            <div class="memory-stack-ghost back-1" aria-hidden="true"></div>
 
-                <div class="road-interactive-container">
-                    <div class="road-hint-bar">
-                        <span>💡 <strong>Rà chuột (hoặc bấm)</strong> vào từng cột mốc trên đường đi để xem tóm tắt giai đoạn</span>
-                    </div>
-
-                    <!-- Khung Con Đường Uốn Lượn (Winding Road Canvas) -->
-                    <div class="road-stage-wrapper">
-                        <div class="road-stage">
-                            <!-- SVG Vẽ Con Đường (Asphalt, Lanes, Curbs) -->
-                            <svg class="road-svg-canvas" viewBox="0 0 1200 480" preserveAspectRatio="none" aria-hidden="true">
-                                <defs>
-                                    <linearGradient id="roadLaneGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#002855"/>
-                                        <stop offset="35%" stop-color="#00a3e0"/>
-                                        <stop offset="70%" stop-color="#10b981"/>
-                                        <stop offset="100%" stop-color="#e5a93c"/>
-                                    </linearGradient>
-                                </defs>
-
-                                <!-- Vệt bóng mặt đường -->
-                                <path d="M 60,244 C 180,244 220,104 312,104 C 404,104 412,384 504,384 C 596,384 604,104 696,104 C 788,104 796,384 888,384 C 980,384 1000,244 1080,244 L 1140,244"
-                                      fill="none" stroke="rgba(0, 40, 85, 0.08)" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
-
-                                <!-- Nền mặt đường trắng xanh phong cách Blueprint Bách Khoa -->
-                                <path d="M 60,240 C 180,240 220,100 312,100 C 404,100 412,380 504,380 C 596,380 604,100 696,100 C 788,100 796,380 888,380 C 980,380 1000,240 1080,240 L 1140,240"
-                                      fill="none" stroke="#ffffff" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
-
-                                <!-- Viền hào quang năng lượng dọc theo đường -->
-                                <path d="M 60,240 C 180,240 220,100 312,100 C 404,100 412,380 504,380 C 596,380 604,100 696,100 C 788,100 796,380 888,380 C 980,380 1000,240 1080,240 L 1140,240"
-                                      fill="none" stroke="url(#roadLaneGrad)" stroke-width="15" stroke-opacity="0.25" stroke-linecap="round"/>
-
-                                <!-- Vạch kẻ tim đường chuyển động đứt đoạn (Animated Lane Dashes) -->
-                                <path class="road-center-dashes"
-                                      d="M 60,240 C 180,240 220,100 312,100 C 404,100 412,380 504,380 C 596,380 604,100 696,100 C 788,100 796,380 888,380 C 980,380 1000,240 1080,240 L 1140,240"
-                                      fill="none" stroke="url(#roadLaneGrad)" stroke-width="3.5" stroke-dasharray="12 10" stroke-linecap="round"/>
-
-                                <!-- Vạch xuất phát & kết thúc -->
-                                <circle cx="60" cy="240" r="8" fill="#002855"/>
-                                <circle cx="1140" cy="240" r="10" fill="#e5a93c"/>
-                            </svg>
-
-                            <!-- Các Cột Mốc Trạm Dừng Chân (Road Milestone Stations) -->
-                            
-                            <!-- Trạm 1: 2021 (Rộng rãi, không bị khuất mép) -->
-                            <div class="road-milestone pos-2021" data-index="0" tabindex="0">
-                                <div class="milestone-pin">
-                                    <span class="pin-halo"></span>
-                                    <div class="pin-core">
-                                        <span class="pin-icon">🏛️</span>
-                                        <span class="pin-year">2021</span>
-                                    </div>
-                                    <span class="pin-label">Khởi Đầu</span>
+                            <div class="memory-active-card" id="memory-active-card" role="button" tabindex="0" title="Nhấn để lật sang kỷ vật tiếp theo">
+                                <div class="memory-card-top">
+                                    <span class="memory-year-badge" id="memory-year">2021</span>
+                                    <span class="memory-emoji-icon" id="memory-icon">🏛️</span>
                                 </div>
-                                <div class="milestone-tooltip tooltip-up">
-                                    <div class="tooltip-header">
-                                        <span class="tooltip-badge">CHẶNG 01</span>
-                                        <span class="tooltip-phase start">Khởi Đầu</span>
-                                    </div>
-                                    <h4 class="tooltip-title">🏛️ Bước Vào Giảng Đường Bách Khoa</h4>
-                                    <p class="tooltip-desc">Đặt chân qua Cổng A2 (268 Lý Thường Kiệt), chính thức trở thành tân sinh viên ngành Kỹ thuật Năng lượng Khóa K21.</p>
-                                    <div class="tooltip-meta">📍 Cột mốc xuất phát · 268 Lý Thường Kiệt</div>
-                                </div>
-                            </div>
-
-                            <!-- Trạm 2: 2022 -->
-                            <div class="road-milestone pos-2022" data-index="1" tabindex="0">
-                                <div class="milestone-pin">
-                                    <span class="pin-halo"></span>
-                                    <div class="pin-core">
-                                        <span class="pin-icon">🏕️</span>
-                                        <span class="pin-year">2022</span>
-                                    </div>
-                                    <span class="pin-label">Tôi Luyện</span>
-                                </div>
-                                <div class="milestone-tooltip tooltip-down">
-                                    <div class="tooltip-header">
-                                        <span class="tooltip-badge">CHẶNG 02</span>
-                                        <span class="tooltip-phase training">Tôi Luyện</span>
-                                    </div>
-                                    <h4 class="tooltip-title">🏕️ Thao Trường Dĩ An & Đại Cương</h4>
-                                    <p class="tooltip-desc">Mùa hè quân sự áo lính tôi luyện kỷ luật và tình đồng đội; vượt qua các kỳ thi Toán - Lý kỹ thuật nền tảng vững chắc.</p>
-                                    <div class="tooltip-meta">🎖️ Quân sự Dĩ An · Cơ sở 2</div>
-                                </div>
-                            </div>
-
-                            <!-- Trạm 3: 2023 -->
-                            <div class="road-milestone pos-2023" data-index="2" tabindex="0">
-                                <div class="milestone-pin">
-                                    <span class="pin-halo"></span>
-                                    <div class="pin-core">
-                                        <span class="pin-icon">⚡</span>
-                                        <span class="pin-year">2023</span>
-                                    </div>
-                                    <span class="pin-label">Cơ Sở Ngành</span>
-                                </div>
-                                <div class="milestone-tooltip tooltip-up">
-                                    <div class="tooltip-header">
-                                        <span class="tooltip-badge">CHẶNG 03</span>
-                                        <span class="tooltip-phase core">Cơ Sở Ngành</span>
-                                    </div>
-                                    <h4 class="tooltip-title">⚡ Cơ Sở Kỹ Thuật Năng Lượng</h4>
-                                    <p class="tooltip-desc">Tiếp cận các học phần Nhiệt động lực học, Truyền nhiệt, Nguyên lý hệ thống năng lượng và thí nghiệm chuyên ngành.</p>
-                                    <div class="tooltip-meta">🔬 Làm chủ nguyên lý cốt lõi</div>
-                                </div>
-                            </div>
-
-                            <!-- Trạm 4: 2024 -->
-                            <div class="road-milestone pos-2024" data-index="3" tabindex="0">
-                                <div class="milestone-pin">
-                                    <span class="pin-halo"></span>
-                                    <div class="pin-core">
-                                        <span class="pin-icon">🔋</span>
-                                        <span class="pin-year">2024</span>
-                                    </div>
-                                    <span class="pin-label">Chuyên Sâu</span>
-                                </div>
-                                <div class="milestone-tooltip tooltip-down">
-                                    <div class="tooltip-header">
-                                        <span class="tooltip-badge">CHẶNG 04</span>
-                                        <span class="tooltip-phase lab">Chuyên Sâu</span>
-                                    </div>
-                                    <h4 class="tooltip-title">🔋 Phòng Lab Pin & Điện Mặt Trời</h4>
-                                    <p class="tooltip-desc">Đo đạc kiểm tra tế bào pin Lithium, nghiên cứu điện hóa và thiết kế mô phỏng các giải pháp năng lượng mặt trời.</p>
-                                    <div class="tooltip-meta">⚡ Lab Điện Hóa & Pin</div>
-                                </div>
-                            </div>
-
-                            <!-- Trạm 5: 2025 -->
-                            <div class="road-milestone pos-2025" data-index="4" tabindex="0">
-                                <div class="milestone-pin">
-                                    <span class="pin-halo"></span>
-                                    <div class="pin-core">
-                                        <span class="pin-icon">🌱</span>
-                                        <span class="pin-year">2025</span>
-                                    </div>
-                                    <span class="pin-label">Thực Chiến</span>
-                                </div>
-                                <div class="milestone-tooltip tooltip-up">
-                                    <div class="tooltip-header">
-                                        <span class="tooltip-badge">CHẶNG 05</span>
-                                        <span class="tooltip-phase field">Thực Chiến</span>
-                                    </div>
-                                    <h4 class="tooltip-title">🌱 Thực Tập Doanh Nghiệp & Net Zero</h4>
-                                    <p class="tooltip-desc">Mô phỏng ổn định lưới điện phân tán, tham gia giải pháp năng lượng sạch thực tế hướng đến mục tiêu Net Zero.</p>
-                                    <div class="tooltip-meta">🌍 Dự án & Doanh nghiệp</div>
-                                </div>
-                            </div>
-
-                            <!-- Trạm 6: 2026 (Đích Đến) -->
-                            <div class="road-milestone pos-2026 goal-station active" data-index="5" tabindex="0">
-                                <div class="milestone-pin gold">
-                                    <span class="pin-halo gold"></span>
-                                    <div class="pin-core gold">
-                                        <span class="pin-icon">🎓</span>
-                                        <span class="pin-year gold">2026</span>
-                                    </div>
-                                    <span class="pin-label highlight">Cán Đích ✨</span>
-                                </div>
-                                <div class="milestone-tooltip tooltip-up goal-tip">
-                                    <div class="tooltip-header">
-                                        <span class="tooltip-badge gold">ĐÍCH ĐẾN</span>
-                                        <span class="tooltip-phase goal">Cán Đích</span>
-                                    </div>
-                                    <h4 class="tooltip-title">🎓 Vinh Danh Tân Kỹ Sư Năng Lượng</h4>
-                                    <p class="tooltip-desc">Bảo vệ Khóa luận tốt nghiệp xuất sắc; chính thức nhận bằng Tân Kỹ sư Bách Khoa trong lễ vinh danh ngày 28/11/2026.</p>
-                                    <div class="tooltip-meta gold">🏆 Hội trường A5 · 28/11/2026 · Hoàn Thành</div>
+                                <h3 class="memory-card-title" id="memory-title">Ngày Đầu Bước Qua Cổng A2</h3>
+                                <p class="memory-card-desc" id="memory-desc">
+                                    Nhận chiếc thẻ sinh viên Bách Khoa đầu tiên tại 268 Lý Thường Kiệt, chính thức bắt đầu thanh xuân cùng ngành Kỹ thuật Năng lượng.
+                                </p>
+                                <div class="memory-card-foot">
+                                    <span class="memory-place" id="memory-place">📍 Giảng đường Lý Thường Kiệt</span>
+                                    <span class="memory-tap-hint">Chạm thẻ để lật ↻</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Bảng Tiêu Điểm Tóm Tắt Chặng Đang Chọn (Active Stage Spotlight) -->
-                    <div class="road-spotlight-card" id="road-spotlight-card">
-                        <div class="spotlight-header">
-                            <div class="spotlight-pills">
-                                <span class="spotlight-step-pill" id="spotlight-step">ĐÍCH ĐẾN · NĂM 2026</span>
-                                <span class="spotlight-phase-pill" id="spotlight-phase">CÁN ĐÍCH</span>
+                        <div class="memory-deck-controls">
+                            <button type="button" class="deck-nav-btn" id="memory-prev-btn" aria-label="Kỷ vật trước">← Trước</button>
+                            <div class="memory-dots" id="memory-dots" role="tablist" aria-label="Chọn kỷ vật">
+                                <button type="button" class="m-dot active" data-index="0" aria-label="Kỷ vật 1"></button>
+                                <button type="button" class="m-dot" data-index="1" aria-label="Kỷ vật 2"></button>
+                                <button type="button" class="m-dot" data-index="2" aria-label="Kỷ vật 3"></button>
+                                <button type="button" class="m-dot" data-index="3" aria-label="Kỷ vật 4"></button>
                             </div>
-                            <!-- Bộ nút chọn chặng nhanh rộng rãi -->
-                            <div class="spotlight-selector">
-                                <button type="button" class="stage-nav-btn" data-stage="0">2021 · Khởi Đầu</button>
-                                <button type="button" class="stage-nav-btn" data-stage="1">2022 · Tôi Luyện</button>
-                                <button type="button" class="stage-nav-btn" data-stage="2">2023 · Cơ Sở Ngành</button>
-                                <button type="button" class="stage-nav-btn" data-stage="3">2024 · Chuyên Sâu</button>
-                                <button type="button" class="stage-nav-btn" data-stage="4">2025 · Thực Chiến</button>
-                                <button type="button" class="stage-nav-btn active" data-stage="5">2026 · Cán Đích 🎓</button>
-                            </div>
+                            <button type="button" class="deck-nav-btn" id="memory-next-btn" aria-label="Kỷ vật tiếp theo">Tiếp →</button>
                         </div>
-                        <div class="spotlight-body">
-                            <div class="spotlight-icon-col">
-                                <span class="spotlight-icon" id="spotlight-icon">🎓</span>
-                            </div>
-                            <div class="spotlight-content-col">
-                                <h3 class="spotlight-title" id="spotlight-title">Vinh Danh Tân Kỹ Sư Năng Lượng</h3>
-                                <p class="spotlight-desc" id="spotlight-desc">Bảo vệ Khóa luận tốt nghiệp xuất sắc; chính thức nhận bằng Tân Kỹ sư Bách Khoa trong lễ vinh danh ngày 28/11/2026.</p>
-                                <div class="spotlight-footer-meta">
-                                    <span class="spotlight-meta-tag" id="spotlight-meta">🏆 Hội trường A5 · 28/11/2026</span>
-                                    <span class="spotlight-hint">✦ Rà chuột lên đường đi hoặc bấm các năm để xem</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    </aside>
                 </div>
             </section>
 
@@ -562,6 +427,19 @@
                         <div class="event-line-item" style="color: var(--text-muted); font-size: 0.88rem;">
                             <em>(Kính mời mọi người có mặt trước 30 phút để cùng trò chuyện và chụp những bức ảnh lưu niệm thật đẹp nhé!)</em>
                         </div>
+
+                        <!-- Cẩm nang đi lễ nhanh tại Campus Bách Khoa -->
+                        <div class="campus-guide-box" id="campus-guide-box">
+                            <div class="campus-guide-tabs" role="tablist">
+                                <button type="button" class="guide-tab-btn active" data-guide="parking" role="tab" aria-selected="true">🚪 Cổng & Gửi Xe</button>
+                                <button type="button" class="guide-tab-btn" data-guide="hall" role="tab" aria-selected="false">🏛️ Hội Trường A5</button>
+                                <button type="button" class="guide-tab-btn" data-guide="photo" role="tab" aria-selected="false">📸 Góc Check-in Đẹp</button>
+                            </div>
+                            <div class="campus-guide-content" id="campus-guide-content">
+                                <strong>Gửi xe thuận tiện:</strong> Cổng sau <strong>142 Tô Hiến Thành</strong> hoặc bãi xe <strong>268 Lý Thường Kiệt</strong> đều có bãi giữ xe máy rộng rãi; ô tô có thể đỗ dọc sân nội bộ theo hướng dẫn bảo vệ.
+                            </div>
+                        </div>
+
                         <div class="event-actions-cluster">
                             <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=L%E1%BB%85+T%E1%BB%91t+Nghi%E1%BB%87p+T%C3%A2n+K%E1%BB%B9+S%C6%B0+-+Ph%E1%BA%A1m+Minh+Ph%C6%B0%C6%A1ng+(HCMUT)&dates=20261128T010000Z/20261128T043000Z&details=L%E1%BB%85+Trao+B%E1%BA%B1ng+T%E1%BB%91t+Nghi%E1%BB%87p+T%C3%A2n+K%E1%BB%B9+S%C6%B0+N%C4%83ng+L%C6%B0%E1%BB%A3ng+-+Ph%E1%BA%A1m+Minh+Ph%C6%B0%C6%A1ng+-+%C4%90%E1%BA%A1i+h%E1%BB%8Dc+B%C3%A1ch+Khoa+%C4%90HQG-HCM&location=H%E1%BB%99i+tr%C6%B0%E1%BB%9Dng+A5/C2,+268+L%C3%BD+Th%C6%B0%E1%BB%9Dng+Ki%E1%BB%87t,+Ph%C6%B0%E1%BB%9Dng+14,+Qu%E1%BA%ADn+10,+TP.HCM" target="_blank" rel="noopener noreferrer" class="btn-event-pill btn-cal">
                                 📅 Thêm Vào Google Calendar
@@ -618,6 +496,12 @@
 
                         <div class="form-group-clean">
                             <label for="guest-message">Lời nhắn gửi đến Tân Kỹ sư</label>
+                            <!-- Gợi ý lời chúc nhanh 1 chạm -->
+                            <div class="quick-wish-chips" aria-label="Gợi ý lời chúc nhanh">
+                                <button type="button" class="wish-chip-btn" data-wish="Chúc mừng Tân Kỹ sư Phạm Minh Phương! Chúc bạn luôn tràn đầy năng lượng, vững bước thành công rực rỡ trên chặng đường mới! 🎓⚡">🎓 Chúc mừng Tân Kỹ sư!</button>
+                                <button type="button" class="wish-chip-btn" data-wish="Chúc kỹ sư Năng lượng K21 giữ mãi ngọn lửa nhiệt huyết Bách Khoa, công việc hanh thông và gặt hái thật nhiều thành tựu! 🔋✨">⚡ Năng lượng bùng nổ!</button>
+                                <button type="button" class="wish-chip-btn" data-wish="Mừng ngày hái quả ngọt sau 5 năm miệt mài tại Bách Khoa! Hẹn gặp nhau chụp thật nhiều ảnh kỷ niệm tại Hội trường A5 nhé! 📸🌟">📸 Hẹn gặp tại A5!</button>
+                            </div>
                             <textarea id="guest-message" class="form-input-clean" rows="3" placeholder="Gửi lời chúc mừng tốt nghiệp đến Phương..."></textarea>
                         </div>
 
@@ -640,7 +524,7 @@
                         </div>
 
                         <div class="receipt-row">
-                            Kính gửi: <strong id="receipt-guest-name">Quý Khách Quý Bạn</strong>
+                            Kính gửi: <strong id="receipt-guest-name">Bạn Thân Mến</strong>
                         </div>
                         <div class="receipt-row">
                             Đến chung vui cùng: <strong>Kỹ sư Phạm Minh Phương</strong>
@@ -653,8 +537,11 @@
                             "Chúc bạn luôn giữ trọn ngọn lửa nhiệt huyết, bền bỉ và gặt hái nhiều thành công rực rỡ trên con đường sự nghiệp!"
                         </div>
 
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-align: right; margin-top: 14px;">
-                            ✦ THẺ LƯU NIỆM HCMUT · 2026 ✦
+                        <div class="receipt-footer-actions">
+                            <span class="receipt-pass-id">✦ MÃ THẺ: BK-K21-2026</span>
+                            <button type="button" class="btn-download-pass" id="btn-download-pass" title="Tải về hình ảnh thẻ lưu niệm chúc mừng tốt nghiệp">
+                                📸 Tải Thẻ Lưu Niệm (PNG)
+                            </button>
                         </div>
                     </aside>
                 </div>
@@ -712,18 +599,28 @@
 
     <!-- Nút ăn mừng nổi nhanh (Floating Celebration FAB) -->
     <div class="celebrate-fab-group" id="celebrate-fab-group">
-        <div class="fab-menu" id="fab-menu">
-            <button type="button" class="fab-action-btn" id="fab-cap-btn" title="Tung Mũ Cử Nhân">
-                🎓 Tung Mũ
+        <div class="fab-menu" id="fab-menu" role="menu" aria-label="Hiệu ứng ăn mừng">
+            <button type="button" class="fab-action-btn caps" id="fab-cap-btn" role="menuitem" aria-label="Tung Mũ Cử Nhân">
+                <span>🎓</span>
+                <span>Tung Mũ</span>
             </button>
-            <button type="button" class="fab-action-btn" id="fab-firework-btn" title="Bắn Pháo Hoa">
-                🎆 Pháo Hoa
+            <button type="button" class="fab-action-btn fireworks" id="fab-firework-btn" role="menuitem" aria-label="Bắn Pháo Hoa">
+                <span>🎆</span>
+                <span>Pháo Hoa</span>
             </button>
         </div>
-        <button type="button" class="fab-main-btn" id="fab-celebrate-btn" title="Ăn mừng tốt nghiệp">
-            🎉
+        <button type="button" class="fab-main-btn" id="fab-celebrate-btn" aria-label="Mở menu ăn mừng tốt nghiệp" aria-expanded="false">
+            <span class="fab-main-icon" aria-hidden="true">🎉</span>
         </button>
     </div>
+
+    <!-- Nút Cuộn Lên Đầu Trang (Back to Top) -->
+    <button type="button" class="back-to-top-btn" id="btn-back-to-top" aria-label="Về đầu trang">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 19V5"/>
+            <path d="M5 12l7-7 7 7"/>
+        </svg>
+    </button>
 
     <!-- Canvas Bắn Pháo Hoa / Tung Mũ Tốt Nghiệp -->
     <canvas id="confetti-canvas" aria-hidden="true"></canvas>

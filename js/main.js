@@ -23,6 +23,9 @@ document.addEventListener("DOMContentLoaded", () => {
     initQuickWishesAndPass();
     initEnvelopeExperience();
     initBackToTop();
+    initNavigationUI();
+    initPhotoReactions();
+    initFunQuiz();
 
     // Hỗ trợ tự động kích hoạt hiệu ứng nếu có tham số trên URL
     try {
@@ -46,12 +49,29 @@ function initCountdown() {
     const countdownEl = document.getElementById("countdown");
     if (!countdownEl) return;
 
+    const daysEl = countdownEl.querySelector('[data-unit="days"]');
+    const hoursEl = countdownEl.querySelector('[data-unit="hours"]');
+    const minsEl = countdownEl.querySelector('[data-unit="mins"]');
+    const secsEl = countdownEl.querySelector('[data-unit="secs"]');
+    const hasTiles = Boolean(daysEl && hoursEl && minsEl && secsEl);
+
+    function renderValues(d, h, m, s) {
+        if (hasTiles) {
+            daysEl.textContent = d;
+            hoursEl.textContent = h;
+            minsEl.textContent = m;
+            secsEl.textContent = s;
+        } else {
+            countdownEl.textContent = `${d} : ${h} : ${m} : ${s}`;
+        }
+    }
+
     function updateTimer() {
         const now = Date.now();
         const diff = GRADUATION_DATE - now;
 
         if (diff <= 0) {
-            countdownEl.textContent = "00 : 00 : 00 : 00";
+            renderValues("00", "00", "00", "00");
             return;
         }
 
@@ -61,7 +81,7 @@ function initCountdown() {
         const seconds = Math.floor((diff / 1000) % 60);
 
         const pad = (n) => String(n).padStart(2, "0");
-        countdownEl.textContent = `${pad(days)} : ${pad(hours)} : ${pad(minutes)} : ${pad(seconds)}`;
+        renderValues(pad(days), pad(hours), pad(minutes), pad(seconds));
     }
 
     updateTimer();
@@ -282,7 +302,9 @@ function initGuestbook() {
         }
 
         // Thêm lời chúc vào Bảng tin Lời Chúc Thời Gian Thực
-        addWishToList(finalName, relation, finalMessage);
+        const selectedGiftBtn = document.querySelector(".gift-chip-btn.is-selected");
+        const selectedGift = selectedGiftBtn ? selectedGiftBtn.getAttribute("data-gift") : "💐 Bó Hoa Hướng Dương";
+        addWishToList(finalName, relation, finalMessage, selectedGift);
 
         // Combo pháo hoa + tung mũ cử nhân rực rỡ
         if (celebrationEngine) {
@@ -316,90 +338,119 @@ function initGuestbook() {
 /**
  * 4. Hỗ trợ phóng to ảnh (Lightbox đơn giản, mượt mà)
  */
+let galleryCardsCache = [];
+let activeModalIndex = 0;
+
 function initPhotoModal() {
-    // Tạo modal element
+    if (document.getElementById("photo-modal")) return;
+
+    galleryCardsCache = Array.from(document.querySelectorAll(".gallery-card"));
+
     const modal = document.createElement("div");
     modal.id = "photo-modal";
-    modal.style.cssText = `
-        position: fixed;
-        inset: 0;
-        z-index: 1000;
-        background: rgba(0, 40, 85, 0.92);
-        backdrop-filter: blur(8px);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        cursor: pointer;
+    modal.className = "photo-dialog-overlay";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "modal-title-text");
+
+    modal.innerHTML = `
+        <div class="photo-dialog-content">
+            <div class="photo-dialog-header">
+                <div class="photo-dialog-meta">
+                    <span class="photo-dialog-badge" id="modal-year-badge">2026</span>
+                    <h3 class="photo-dialog-title" id="modal-title-text">Khoảnh khắc Bách Khoa</h3>
+                </div>
+                <div class="photo-dialog-controls">
+                    <span class="photo-dialog-counter" id="modal-index-counter">1 / 5</span>
+                    <button type="button" class="photo-dialog-close" id="modal-close-btn" aria-label="Đóng hộp thoại ảnh">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="photo-dialog-stage">
+                <button type="button" class="photo-dialog-nav prev" id="modal-prev-btn" aria-label="Ảnh trước">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                </button>
+                <img id="modal-image" src="" alt="Khoảnh khắc kỷ niệm Bách Khoa">
+                <button type="button" class="photo-dialog-nav next" id="modal-next-btn" aria-label="Ảnh tiếp theo">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
     `;
 
-    const imgContainer = document.createElement("div");
-    imgContainer.style.cssText = `
-        max-width: 900px;
-        width: 100%;
-        max-height: 85vh;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-        border: 2px solid rgba(0, 163, 224, 0.4);
-        background: #002855;
-        position: relative;
-    `;
-
-    const modalImg = document.createElement("img");
-    modalImg.id = "modal-image";
-    modalImg.style.cssText = `
-        width: 100%;
-        height: auto;
-        max-height: 75vh;
-        object-fit: contain;
-        display: block;
-    `;
-
-    const modalCaption = document.createElement("div");
-    modalCaption.id = "modal-caption";
-    modalCaption.style.cssText = `
-        padding: 16px 20px;
-        background: #002855;
-        color: #ffffff;
-        font-weight: 700;
-        font-size: 1rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-top: 1px solid rgba(255, 255, 255, 0.15);
-    `;
-
-    imgContainer.appendChild(modalImg);
-    imgContainer.appendChild(modalCaption);
-    modal.appendChild(imgContainer);
     document.body.appendChild(modal);
 
-    modal.addEventListener("click", () => {
-        modal.style.display = "none";
+    const closeModal = () => {
+        modal.classList.remove("is-open");
+    };
+
+    const stepModal = (delta) => {
+        if (!galleryCardsCache.length) return;
+        const nextIndex = (activeModalIndex + delta + galleryCardsCache.length) % galleryCardsCache.length;
+        openPhotoModal(galleryCardsCache[nextIndex], false);
+    };
+
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    modal.querySelector("#modal-close-btn").addEventListener("click", closeModal);
+    modal.querySelector("#modal-prev-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        stepModal(-1);
+    });
+    modal.querySelector("#modal-next-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        stepModal(1);
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (!modal.classList.contains("is-open")) return;
+        if (e.key === "Escape") closeModal();
+        if (e.key === "ArrowLeft") stepModal(-1);
+        if (e.key === "ArrowRight") stepModal(1);
     });
 }
 
-function openPhotoModal(cardEl) {
+function openPhotoModal(cardEl, triggerCaps = true) {
     const modal = document.getElementById("photo-modal");
     const modalImg = document.getElementById("modal-image");
-    const modalCaption = document.getElementById("modal-caption");
-    if (!modal || !modalImg || !modalCaption || !cardEl) return;
+    const modalTitle = document.getElementById("modal-title-text");
+    const modalBadge = document.getElementById("modal-year-badge");
+    const modalCounter = document.getElementById("modal-index-counter");
+    if (!modal || !modalImg || !cardEl) return;
+
+    if (!galleryCardsCache.length) {
+        galleryCardsCache = Array.from(document.querySelectorAll(".gallery-card"));
+    }
+    const idx = galleryCardsCache.indexOf(cardEl);
+    activeModalIndex = idx >= 0 ? idx : 0;
 
     const img = cardEl.querySelector("img");
     const title = cardEl.querySelector(".photo-caption-title");
     const year = cardEl.querySelector(".photo-year-tag");
 
-    if (img) modalImg.src = img.src;
-    modalCaption.innerHTML = `
-        <span>${title ? title.textContent : "Khoảnh khắc Bách Khoa"}</span>
-        <span style="font-size: 0.85rem; color: #00a3e0;">${year ? year.textContent : "2026"}</span>
-    `;
+    if (img) {
+        modalImg.src = img.src;
+        modalImg.alt = img.alt || "Khoảnh khắc Bách Khoa";
+    }
+    if (modalTitle) modalTitle.textContent = title ? title.textContent : "Khoảnh khắc Bách Khoa";
+    if (modalBadge) modalBadge.textContent = year ? year.textContent : "2026";
+    if (modalCounter && galleryCardsCache.length) {
+        modalCounter.textContent = `${activeModalIndex + 1} / ${galleryCardsCache.length}`;
+    }
 
-    modal.style.display = "flex";
+    modal.classList.add("is-open");
 
     // Khi mở ảnh tung mũ cử nhân, tự động kích hoạt hiệu ứng tung mũ bay trong không gian
-    if (title && title.textContent.includes("Tung Mũ") && celebrationEngine) {
+    if (triggerCaps && title && title.textContent.includes("Tung Mũ") && celebrationEngine) {
         celebrationEngine.tossCaps(16);
         playCapTossSound();
     }
@@ -462,52 +513,147 @@ function initCelebration() {
         });
     }
 
+    const fabSparkBtn = document.getElementById("fab-spark-mode-btn");
+    let sparkClickMode = false;
+
+    if (fabSparkBtn) {
+        fabSparkBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            sparkClickMode = !sparkClickMode;
+            fabSparkBtn.classList.toggle("is-active", sparkClickMode);
+            fabSparkBtn.setAttribute("aria-checked", String(sparkClickMode));
+            document.body.classList.toggle("spark-cursor-active", sparkClickMode);
+            showToast(
+                sparkClickMode
+                    ? "✨ Đã bật Chạm Nổ Pháo! Bấm bất kỳ đâu trên trang để bắn tia sáng!"
+                    : "✨ Đã tắt chế độ Chạm Nổ Pháo."
+            );
+        });
+    }
+
     document.addEventListener("click", (e) => {
         if (fabGroup && fabGroup.classList.contains("active") && !fabGroup.contains(e.target)) {
             fabGroup.classList.remove("active");
             if (fabMainBtn) fabMainBtn.setAttribute("aria-expanded", "false");
         }
+
+        if (sparkClickMode && celebrationEngine && !e.target.closest("#celebrate-fab-group")) {
+            celebrationEngine.sparkAt(e.clientX, e.clientY);
+        }
     });
 }
 
 // ==========================================================================
-// 6. CHIA SẺ THIỆP MỜI (WEB SHARE API & CLIPBOARD FALLBACK)
+// 6. CHIA SẺ & CÁ NHÂN HÓA THIỆP MỜI (SHADCN DIALOG + URL BUILDER)
 // ==========================================================================
 function initShareButton() {
     const shareBtn = document.getElementById("btn-hero-share");
+    const overlay = document.getElementById("share-dialog-overlay");
+    const closeBtn = document.getElementById("share-dialog-close");
+    const inputEl = document.getElementById("share-recipient-input");
+    const previewNameEl = document.getElementById("share-preview-name");
+    const urlPreviewEl = document.getElementById("share-url-preview");
+    const copyLinkBtn = document.getElementById("btn-copy-personal-link");
+    const previewEnvBtn = document.getElementById("btn-preview-personal-env");
+    const presetBtns = document.querySelectorAll(".share-preset-btn");
+
     if (!shareBtn) return;
 
-    shareBtn.addEventListener("click", async () => {
-        const shareData = {
-            title: "Lễ Tốt Nghiệp Kỹ Sư HCMUT — Phạm Minh Phương",
-            text: "Kính mời bạn đến tham dự Lễ Tốt Nghiệp Tân Kỹ Sư Năng Lượng Phạm Minh Phương tại ĐH Bách Khoa TP.HCM (28/11/2026)!",
-            url: window.location.href
-        };
-
-        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-            try {
-                await navigator.share(shareData);
-            } catch (err) {
-                // Người dùng hủy chia sẻ
+    function buildPersonalUrl(rawName) {
+        try {
+            const url = new URL(window.location.href);
+            url.hash = "";
+            const trimmed = (rawName || "").trim();
+            if (trimmed && trimmed !== "Bạn Thân Mến") {
+                url.searchParams.set("to", trimmed);
+            } else {
+                url.searchParams.delete("to");
             }
-        } else {
+            return url.toString();
+        } catch (e) {
+            return window.location.href;
+        }
+    }
+
+    function syncSharePreview() {
+        const name = (inputEl ? inputEl.value.trim() : "") || "Bạn Thân Mến";
+        if (previewNameEl) previewNameEl.textContent = name;
+        if (urlPreviewEl) urlPreviewEl.textContent = buildPersonalUrl(name);
+    }
+
+    function setShareDialogOpen(isOpen) {
+        if (!overlay) return;
+        overlay.classList.toggle("is-open", isOpen);
+        if (isOpen) {
+            syncSharePreview();
+            if (inputEl) setTimeout(() => inputEl.focus(), 80);
+        }
+    }
+
+    shareBtn.addEventListener("click", () => {
+        if (overlay) {
+            setShareDialogOpen(true);
+        }
+    });
+
+    if (closeBtn) closeBtn.addEventListener("click", () => setShareDialogOpen(false));
+    if (overlay) {
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) setShareDialogOpen(false);
+        });
+    }
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && overlay && overlay.classList.contains("is-open")) {
+            setShareDialogOpen(false);
+        }
+    });
+
+    if (inputEl) inputEl.addEventListener("input", syncSharePreview);
+
+    presetBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const val = btn.getAttribute("data-name") || "";
+            if (inputEl) inputEl.value = val;
+            syncSharePreview();
+        });
+    });
+
+    if (copyLinkBtn) {
+        copyLinkBtn.addEventListener("click", async () => {
+            const name = (inputEl ? inputEl.value.trim() : "") || "Bạn Thân Mến";
+            const finalUrl = buildPersonalUrl(name);
             try {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(window.location.href);
+                    await navigator.clipboard.writeText(finalUrl);
                 } else {
                     const temp = document.createElement("input");
-                    temp.value = window.location.href;
+                    temp.value = finalUrl;
                     document.body.appendChild(temp);
                     temp.select();
                     document.execCommand("copy");
                     document.body.removeChild(temp);
                 }
-                showToast("✓ Đã sao chép liên kết thiệp mời vào Clipboard!");
+                showToast(`✓ Đã sao chép link thiệp riêng gửi "${name}"!`);
             } catch (err) {
-                showToast("✓ Hãy chia sẻ đường link trang web này nhé!");
+                showToast("✓ Hãy sao chép link xem trước ở hộp trên nhé!");
             }
-        }
-    });
+        });
+    }
+
+    if (previewEnvBtn) {
+        previewEnvBtn.addEventListener("click", () => {
+            const name = (inputEl ? inputEl.value.trim() : "") || "Bạn Thân Mến";
+            const envName = document.getElementById("env-recipient-name");
+            const cardName = document.getElementById("env-card-recipient");
+            const receiptName = document.getElementById("receipt-guest-name");
+            if (envName) envName.textContent = name;
+            if (cardName) cardName.textContent = name;
+            if (receiptName) receiptName.textContent = name;
+            setShareDialogOpen(false);
+            const replayBtn = document.getElementById("btn-replay-envelope");
+            if (replayBtn) replayBtn.click();
+        });
+    }
 }
 
 // ==========================================================================
@@ -612,6 +758,10 @@ function initGratitudeStory() {
     });
 
     if (sparkBtn && sparkCounterEl) {
+        const milestoneFill = document.getElementById("energy-progress-fill");
+        const milestoneLabel = document.getElementById("energy-milestone-label");
+        const milestonePct = document.getElementById("energy-milestone-pct");
+
         let sparkCount = 2026;
         let userClicks = 0;
         try {
@@ -619,7 +769,32 @@ function initGratitudeStory() {
             if (!isNaN(saved) && saved >= 2026) sparkCount = saved;
         } catch (e) {}
 
+        function updateEnergyMeter() {
+            const cycleClicks = userClicks === 0 ? 0 : ((userClicks - 1) % 10) + 1;
+            const pct = cycleClicks * 10;
+            if (milestoneFill) milestoneFill.style.width = `${pct}%`;
+            if (milestonePct) milestonePct.textContent = `${pct}%`;
+            if (milestoneLabel) {
+                if (pct === 100) {
+                    milestoneLabel.textContent = "🎆 Đầy Pin 100%! Bùng nổ pháo hoa chúc mừng Tân Kỹ sư!";
+                } else {
+                    milestoneLabel.textContent = `🔋 Pin Chúc Mừng K21: ${cycleClicks}/10 tia sáng đến mốc Bùng Nổ Pháo Hoa`;
+                }
+            }
+        }
+
+        function spawnFloatingSpark() {
+            const floater = document.createElement("span");
+            floater.className = "spark-floater";
+            floater.textContent = "+1 ⚡";
+            sparkBtn.style.position = "relative";
+            sparkBtn.appendChild(floater);
+            setTimeout(() => floater.remove(), 750);
+        }
+
         sparkCounterEl.textContent = sparkCount.toLocaleString("vi-VN");
+        updateEnergyMeter();
+
         sparkBtn.addEventListener("click", () => {
             sparkCount += 1;
             userClicks += 1;
@@ -632,11 +807,18 @@ function initGratitudeStory() {
             void sparkBtn.offsetWidth;
             sparkBtn.classList.add("is-pulsing");
             playEnergyChargeSound(userClicks);
+            spawnFloatingSpark();
+            updateEnergyMeter();
 
-            if (userClicks % 5 === 0 && celebrationEngine) {
+            if (userClicks % 10 === 0 && celebrationEngine) {
+                celebrationEngine.comboCelebration();
+                showToast("🎆 Pin K21 đạt 100%! Pháo hoa chúc mừng Tân Kỹ sư!");
+            } else if (userClicks % 5 === 0 && celebrationEngine) {
                 celebrationEngine.tossCaps(8);
+                showToast(`⚡ Tuyệt vời! Đã nạp tia sáng thứ ${sparkCount.toLocaleString("vi-VN")}!`);
+            } else {
+                showToast(`⚡ Cảm ơn bạn đã gửi tia sáng chúc mừng thứ ${sparkCount.toLocaleString("vi-VN")}!`);
             }
-            showToast(`⚡ Cảm ơn bạn đã gửi tia sáng chúc mừng thứ ${sparkCount.toLocaleString("vi-VN")}!`);
         });
     }
 
@@ -800,11 +982,25 @@ function initQuickWishesAndPass() {
     wishChips.forEach((chip) => {
         chip.addEventListener("click", () => {
             const wish = chip.getAttribute("data-wish");
+            wishChips.forEach((c) => c.classList.remove("is-selected"));
+            chip.classList.add("is-selected");
             if (msgInput && wish) {
                 msgInput.value = wish;
                 msgInput.dispatchEvent(new Event("input", { bubbles: true }));
                 msgInput.focus();
             }
+        });
+    });
+
+    const giftChips = document.querySelectorAll(".gift-chip-btn");
+    const receiptGiftBadge = document.getElementById("receipt-gift-badge");
+
+    giftChips.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const gift = btn.getAttribute("data-gift");
+            giftChips.forEach((b) => b.classList.remove("is-selected"));
+            btn.classList.add("is-selected");
+            if (receiptGiftBadge && gift) receiptGiftBadge.textContent = gift;
         });
     });
 
@@ -814,6 +1010,8 @@ function initQuickWishesAndPass() {
     downloadBtn.addEventListener("click", () => {
         const guestName = (document.getElementById("receipt-guest-name")?.textContent || "Bạn Thân Mến").trim();
         const statusText = (document.getElementById("receipt-status")?.textContent || "✨ Chung vui cùng Tân Kỹ sư").trim();
+        const giftText = (document.getElementById("receipt-gift-badge")?.textContent || "💐 Bó Hoa Hướng Dương").trim();
+        const tierText = (document.getElementById("receipt-tier-badge")?.textContent || "VIP PASS").trim();
         const quoteText = (document.getElementById("receipt-quote")?.textContent || "\"Chúc mừng tốt nghiệp!\"").trim();
 
         const canvas = document.createElement("canvas");
@@ -889,7 +1087,7 @@ function initQuickWishesAndPass() {
 
         ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
         ctx.font = "18px sans-serif";
-        ctx.fillText("Tân Kỹ sư: Phạm Minh Phương — Kỹ thuật Năng lượng (Khóa K2021)", 64, 290);
+        ctx.fillText(`Tân Kỹ sư: Phạm Minh Phương · Quà tặng: ${giftText} (${tierText})`, 64, 290);
 
         // Khung trích dẫn lời chúc
         ctx.fillStyle = "rgba(0, 18, 42, 0.65)";
@@ -981,6 +1179,7 @@ function renderWishes(wishes) {
 
     listEl.innerHTML = wishes.map((w) => {
         const initial = (w.name || "K").trim().charAt(0).toUpperCase();
+        const giftTag = w.gift ? `<span class="wish-gift-tag">${escapeHtml(w.gift)}</span>` : "";
         return `
             <div class="wish-card">
                 <div>
@@ -993,13 +1192,16 @@ function renderWishes(wishes) {
                     </div>
                     <div class="wish-text">"${escapeHtml(w.message)}"</div>
                 </div>
-                <div class="wish-time">${escapeHtml(w.time || "Vừa xong")}</div>
+                <div class="wish-card-foot">
+                    ${giftTag}
+                    <div class="wish-time">${escapeHtml(w.time || "Vừa xong")}</div>
+                </div>
             </div>
         `;
     }).join("");
 }
 
-function addWishToList(name, relation, message) {
+function addWishToList(name, relation, message, gift = "") {
     let wishes = [];
     try {
         const stored = localStorage.getItem("pmp_grad_wishes");
@@ -1016,6 +1218,7 @@ function addWishToList(name, relation, message) {
         name,
         relation: relation || "Bạn bè / Đồng môn",
         message,
+        gift,
         time: "Vừa xong"
     });
 
@@ -1255,6 +1458,35 @@ class CelebrationEngine {
         this.tossCaps(18);
         this.launchFireworks(5);
         playCelebrationFanfare();
+    }
+
+    // 5. PHÁT TIA SÁNG TẠI ĐIỂM CHẠM / CLICK
+    sparkAt(x, y) {
+        this.resize();
+        const baseColor = this.colors[Math.floor(Math.random() * this.colors.length)];
+        playEnergyChargeSound(6);
+
+        for (let i = 0; i < 28; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 1.6 + Math.random() * 6.5;
+            const color = Math.random() > 0.35 ? baseColor : this.colors[Math.floor(Math.random() * this.colors.length)];
+
+            this.sparks.push({
+                x,
+                y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 1.2,
+                color,
+                size: 2 + Math.random() * 2.4,
+                alpha: 1,
+                decay: 0.018 + Math.random() * 0.016,
+                gravity: 0.1
+            });
+        }
+
+        if (!this.animationId) {
+            this.loop();
+        }
     }
 
     drawCap(p) {
@@ -1566,4 +1798,322 @@ function initBackToTop() {
     });
 
     toggleVisibility();
+}
+
+// ==========================================================================
+// 13. ĐIỀU HƯỚNG THÔNG MINH: SCROLL-SPY & MOBILE DRAWER (SHEET / DRAWER)
+// ==========================================================================
+function initNavigationUI() {
+    const toggleBtn = document.getElementById("mobile-nav-toggle");
+    const closeBtn = document.getElementById("mobile-nav-close");
+    const drawer = document.getElementById("mobile-nav-drawer");
+    const backdrop = document.getElementById("mobile-nav-backdrop");
+    const mobileReplayBtn = document.getElementById("mobile-btn-replay-envelope");
+    const desktopReplayBtn = document.getElementById("btn-replay-envelope");
+
+    function setDrawerOpen(isOpen) {
+        if (!drawer || !backdrop || !toggleBtn) return;
+        drawer.classList.toggle("is-open", isOpen);
+        drawer.setAttribute("aria-hidden", String(!isOpen));
+        toggleBtn.setAttribute("aria-expanded", String(isOpen));
+        if (isOpen) {
+            backdrop.hidden = false;
+            requestAnimationFrame(() => backdrop.classList.add("is-open"));
+        } else {
+            backdrop.classList.remove("is-open");
+            setTimeout(() => {
+                if (!drawer.classList.contains("is-open")) backdrop.hidden = true;
+            }, 240);
+        }
+    }
+
+    if (toggleBtn && drawer) {
+        toggleBtn.addEventListener("click", () => {
+            const isOpen = drawer.classList.contains("is-open");
+            setDrawerOpen(!isOpen);
+        });
+    }
+
+    if (closeBtn) closeBtn.addEventListener("click", () => setDrawerOpen(false));
+    if (backdrop) backdrop.addEventListener("click", () => setDrawerOpen(false));
+
+    document.querySelectorAll(".mobile-drawer-link, .mobile-drawer-rsvp").forEach((link) => {
+        link.addEventListener("click", () => setDrawerOpen(false));
+    });
+
+    if (mobileReplayBtn && desktopReplayBtn) {
+        mobileReplayBtn.addEventListener("click", () => {
+            setDrawerOpen(false);
+            desktopReplayBtn.click();
+        });
+    }
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && drawer && drawer.classList.contains("is-open")) {
+            setDrawerOpen(false);
+        }
+    });
+
+    // Scroll-spy cho thanh điều hướng desktop (AntD Anchor / shadcn Nav)
+    const navLinks = Array.from(document.querySelectorAll(".nav-menu .nav-link"));
+    const sectionIds = ["hero", "story", "gallery", "event", "guestbook"];
+    const sections = sectionIds
+        .map((id) => document.getElementById(id))
+        .filter(Boolean);
+
+    function updateActiveNav() {
+        const scrollPos = window.scrollY + 140;
+        let currentId = "hero";
+        for (const sec of sections) {
+            if (sec.offsetTop <= scrollPos) {
+                currentId = sec.id;
+            }
+        }
+        navLinks.forEach((link) => {
+            const target = (link.getAttribute("href") || "").replace("#", "");
+            link.classList.toggle("active", target === currentId);
+        });
+    }
+
+    window.addEventListener("scroll", updateActiveNav, { passive: true });
+    updateActiveNav();
+}
+
+// ==========================================================================
+// 14. THẢ CẢM XÚC TRÊN ẢNH GALLERY (PERSISTENT REACTIONS)
+// ==========================================================================
+function initPhotoReactions() {
+    const reactBtns = document.querySelectorAll(".photo-react-btn");
+    if (!reactBtns.length) return;
+
+    let savedState = {};
+    try {
+        const raw = localStorage.getItem("pmp_photo_reactions");
+        if (raw) savedState = JSON.parse(raw) || {};
+    } catch (e) {}
+
+    reactBtns.forEach((btn) => {
+        const photoId = btn.getAttribute("data-photo");
+        const reactKey = btn.getAttribute("data-react");
+        const countEl = btn.querySelector("span");
+        const key = `${photoId}_${reactKey}`;
+        const baseCount = countEl ? parseInt(countEl.textContent, 10) || 10 : 10;
+
+        if (savedState[key] && countEl) {
+            btn.classList.add("is-reacted");
+            countEl.textContent = String(baseCount + 1);
+        }
+
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation(); // Không mở modal phóng to ảnh khi chỉ thả reaction
+            const isReacted = btn.classList.toggle("is-reacted");
+            if (countEl) {
+                countEl.textContent = String(isReacted ? baseCount + 1 : baseCount);
+            }
+
+            if (isReacted) {
+                savedState[key] = true;
+                playEnergyChargeSound(8);
+                const emoji = btn.textContent.trim().split(" ")[0] || "❤️";
+                const pop = document.createElement("span");
+                pop.className = "react-float-pop";
+                pop.textContent = emoji;
+                btn.appendChild(pop);
+                setTimeout(() => pop.remove(), 650);
+            } else {
+                delete savedState[key];
+            }
+
+            try {
+                localStorage.setItem("pmp_photo_reactions", JSON.stringify(savedState));
+            } catch (err) {}
+        });
+    });
+}
+
+// ==========================================================================
+// 15. MINI-GAME TƯƠNG TÁC: ĐỘ HIỂU TÂN KỸ SƯ PHƯƠNG (3 CÂU HỎI)
+// ==========================================================================
+function initFunQuiz() {
+    const stageEl = document.getElementById("quiz-stage");
+    const stepPill = document.getElementById("quiz-step-pill");
+    const stepFill = document.getElementById("quiz-step-fill");
+    const questionEl = document.getElementById("quiz-question-text");
+    const optionsEl = document.getElementById("quiz-options-list");
+    const feedbackEl = document.getElementById("quiz-feedback-box");
+    const nextBtn = document.getElementById("btn-quiz-next");
+    const restartBtn = document.getElementById("btn-quiz-restart");
+
+    const rewardCard = document.getElementById("quiz-reward-card");
+    const rewardBadge = document.getElementById("quiz-reward-badge");
+    const rewardIcon = document.getElementById("quiz-reward-icon");
+    const rewardTitle = document.getElementById("quiz-reward-title");
+    const rewardDesc = document.getElementById("quiz-reward-desc");
+    const scoreValueEl = document.getElementById("quiz-score-value");
+    const applyBtn = document.getElementById("btn-quiz-apply");
+    const receiptTierBadge = document.getElementById("receipt-tier-badge");
+
+    if (!stageEl || !questionEl || !optionsEl) return;
+
+    const QUESTIONS = [
+        {
+            q: "Hành trình 5 năm Bách Khoa của Phương (2021 – 2026) thuộc chuyên ngành nào?",
+            options: [
+                "A. Kỹ thuật Phần mềm & AI",
+                "B. Kỹ thuật Năng lượng (Pin & Điện xanh)",
+                "C. Kiến trúc & Quy hoạch Đô thị"
+            ],
+            correct: 1,
+            note: "Chuẩn luôn! Phương theo đuổi chuyên ngành Kỹ thuật Năng lượng — nghiên cứu Pin Lithium, điện hóa và năng lượng tái tạo tại HCMUT."
+        },
+        {
+            q: "Lễ Trao Bằng Tốt Nghiệp của Phương diễn ra vào thời gian & địa điểm nào?",
+            options: [
+                "A. 08:00 · Thứ Bảy, 28/11/2026 tại Hội trường A5/C2 (268 Lý Thường Kiệt)",
+                "B. 14:00 · Chủ Nhật, 20/11/2026 tại Cơ sở Dĩ An",
+                "C. 09:00 · Thứ Sáu, 04/10/2026 tại Nhà Văn Hóa Sinh Viên"
+            ],
+            correct: 0,
+            note: "Chính xác! Mời bạn có mặt trước 30 phút (từ 07:30 AM) tại sảnh A5 để check-in và chụp ảnh cùng Phương nhé!"
+        },
+        {
+            q: "Kỷ niệm mùa quân sự và những đêm ôn thi 'đầy nắng gió' của khóa K21 gắn liền với đâu?",
+            options: [
+                "A. Đảo Phú Quốc",
+                "B. Công viên Lê Thị Riêng",
+                "C. Cơ sở Dĩ An & Thư viện Bách Khoa"
+            ],
+            correct: 2,
+            note: "Tuyệt vời! Cơ sở Dĩ An cùng Thư viện Bách Khoa chính là nơi lưu giữ trọn vẹn thanh xuân và tình đồng môn K21!"
+        }
+    ];
+
+    let qIdx = 0;
+    let score = 0;
+    let locked = false;
+    let unlockedTier = "VIP PASS";
+
+    function updateRewardPanel(finished = false) {
+        if (scoreValueEl) scoreValueEl.textContent = `${score} / ${QUESTIONS.length}`;
+
+        if (!finished) {
+            if (rewardBadge) rewardBadge.textContent = `⏳ ĐANG THỬ THÁCH (${score}/${QUESTIONS.length})`;
+            if (rewardCard) rewardCard.classList.remove("is-unlocked");
+            return;
+        }
+
+        if (rewardCard) rewardCard.classList.add("is-unlocked");
+        if (score === 3) {
+            unlockedTier = "🏆 TRI KỶ K21";
+            if (rewardBadge) rewardBadge.textContent = "🔓 ĐÃ MỞ KHÓA CẤP TỐI ĐA";
+            if (rewardIcon) rewardIcon.textContent = "🏆";
+            if (rewardTitle) rewardTitle.textContent = "Tri Kỷ Bách Khoa K21";
+            if (rewardDesc) rewardDesc.textContent = "Đỉnh cao 3/3! Bạn hiểu quá rõ hành trình của Tân Kỹ sư Phương. Danh hiệu đã sẵn sàng gắn lên Thẻ Lưu Niệm!";
+            if (celebrationEngine) celebrationEngine.comboCelebration();
+        } else if (score >= 1) {
+            unlockedTier = "⭐ BẠN THÂN A5";
+            if (rewardBadge) rewardBadge.textContent = "🔓 ĐÃ MỞ KHÓA HUY HIỆU";
+            if (rewardIcon) rewardIcon.textContent = "⭐";
+            if (rewardTitle) rewardTitle.textContent = "Bạn Thân Hội Trường A5";
+            if (rewardDesc) rewardDesc.textContent = `Chúc mừng bạn đạt ${score}/3 điểm! Nhấn nút bên dưới để gắn danh hiệu này lên Thẻ Lưu Niệm nhé!`;
+            if (celebrationEngine) celebrationEngine.tossCaps(12);
+        } else {
+            unlockedTier = "💌 KHÁCH QUÝ A5";
+            if (rewardBadge) rewardBadge.textContent = "✨ HOÀN THÀNH THỬ THÁCH";
+            if (rewardIcon) rewardIcon.textContent = "🎓";
+            if (rewardTitle) rewardTitle.textContent = "Khách Quý Dự Lễ A5";
+            if (rewardDesc) rewardDesc.textContent = "Hẹn gặp bạn ngày 28/11 tại Hội trường A5 để cùng khám phá thêm nhiều kỷ niệm thú vị nhé!";
+        }
+    }
+
+    function renderQuestion() {
+        locked = false;
+        const item = QUESTIONS[qIdx];
+        if (stepPill) stepPill.textContent = `Câu ${qIdx + 1} / ${QUESTIONS.length}`;
+        if (stepFill) stepFill.style.width = `${((qIdx + 1) / QUESTIONS.length) * 100}%`;
+        questionEl.textContent = item.q;
+        if (feedbackEl) {
+            feedbackEl.hidden = true;
+            feedbackEl.className = "quiz-feedback-box";
+            feedbackEl.textContent = "";
+        }
+        if (nextBtn) nextBtn.hidden = true;
+        if (restartBtn) restartBtn.hidden = true;
+
+        optionsEl.innerHTML = item.options
+            .map(
+                (label, idx) =>
+                    `<button type="button" class="quiz-option-btn" data-opt="${idx}">${escapeHtml(label)}</button>`
+            )
+            .join("");
+
+        optionsEl.querySelectorAll(".quiz-option-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                if (locked) return;
+                locked = true;
+                const picked = parseInt(btn.getAttribute("data-opt"), 10);
+                const isCorrect = picked === item.correct;
+
+                optionsEl.querySelectorAll(".quiz-option-btn").forEach((b, i) => {
+                    b.disabled = true;
+                    if (i === item.correct) b.classList.add("is-correct");
+                    else if (i === picked && !isCorrect) b.classList.add("is-wrong");
+                });
+
+                if (isCorrect) {
+                    score += 1;
+                    playEnergyChargeSound(10);
+                }
+
+                if (feedbackEl) {
+                    feedbackEl.hidden = false;
+                    feedbackEl.className = `quiz-feedback-box ${isCorrect ? "is-correct" : "is-wrong"}`;
+                    feedbackEl.textContent = isCorrect
+                        ? `✓ ${item.note}`
+                        : `✕ Suýt đúng rồi! ${item.note}`;
+                }
+
+                if (qIdx < QUESTIONS.length - 1) {
+                    if (nextBtn) nextBtn.hidden = false;
+                    updateRewardPanel(false);
+                } else {
+                    if (restartBtn) restartBtn.hidden = false;
+                    updateRewardPanel(true);
+                }
+            });
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", () => {
+            qIdx += 1;
+            renderQuestion();
+        });
+    }
+
+    if (restartBtn) {
+        restartBtn.addEventListener("click", () => {
+            qIdx = 0;
+            score = 0;
+            unlockedTier = "VIP PASS";
+            if (rewardIcon) rewardIcon.textContent = "🎓";
+            if (rewardTitle) rewardTitle.textContent = "Huy Hiệu Khách Mời";
+            if (rewardDesc) rewardDesc.textContent = "Hoàn thành thử thách 3 câu hỏi nhỏ để nâng cấp danh hiệu trên Thẻ Lưu Niệm của bạn!";
+            renderQuestion();
+            updateRewardPanel(false);
+        });
+    }
+
+    if (applyBtn) {
+        applyBtn.addEventListener("click", () => {
+            if (receiptTierBadge) {
+                receiptTierBadge.textContent = unlockedTier;
+                receiptTierBadge.classList.add("is-upgraded");
+            }
+            showToast(`✨ Đã gắn danh hiệu "${unlockedTier}" lên Thẻ Lưu Niệm của bạn!`);
+        });
+    }
+
+    renderQuestion();
+    updateRewardPanel(false);
 }

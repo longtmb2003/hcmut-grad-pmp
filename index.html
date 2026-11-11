@@ -150,14 +150,52 @@
         </a>
 
         <div class="nav-menu">
-            <a href="#hero">Giới Thiệu</a>
-            <a href="#story">Tri Ân & Ký Ức</a>
-            <a href="#gallery">Khoảnh Khắc</a>
-            <a href="#event">Thời Gian & Tọa Độ</a>
+            <a href="#hero" class="nav-link active">Giới Thiệu</a>
+            <a href="#story" class="nav-link">Tri Ân &amp; Ký Ức</a>
+            <a href="#gallery" class="nav-link">Khoảnh Khắc</a>
+            <a href="#event" class="nav-link">Thời Gian &amp; Tọa Độ</a>
+            <span class="nav-divider" aria-hidden="true"></span>
             <button type="button" class="nav-btn-envelope" id="btn-replay-envelope" title="Xem lại phong thư mở thiệp">✉️ Mở Thiệp</button>
             <a href="#guestbook" class="nav-btn-rsvp">Viết Lưu Bút</a>
         </div>
+
+        <button type="button" class="nav-mobile-toggle" id="mobile-nav-toggle" aria-label="Mở menu điều hướng" aria-expanded="false" aria-controls="mobile-nav-drawer">
+            <svg class="icon-menu" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <line x1="4" y1="12" x2="20" y2="12"/>
+                <line x1="4" y1="18" x2="20" y2="18"/>
+            </svg>
+        </button>
     </nav>
+
+    <!-- Mobile Navigation Sheet (shadcn Sheet / AntD Drawer style) -->
+    <div class="mobile-nav-backdrop" id="mobile-nav-backdrop" hidden></div>
+    <aside class="mobile-nav-drawer" id="mobile-nav-drawer" aria-label="Điều hướng di động" aria-hidden="true">
+        <div class="mobile-drawer-header">
+            <div class="mobile-drawer-brand">
+                <img src="assets/icons/hcmut-logo.png" alt="Logo HCMUT">
+                <div>
+                    <div class="brand-name">Phạm Minh Phương</div>
+                    <div class="brand-tag">HCMUT · KỸ SƯ NĂNG LƯỢNG</div>
+                </div>
+            </div>
+            <button type="button" class="mobile-drawer-close" id="mobile-nav-close" aria-label="Đóng menu">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="mobile-drawer-links">
+            <a href="#hero" class="mobile-drawer-link">🏠 Giới Thiệu</a>
+            <a href="#story" class="mobile-drawer-link">💌 Tri Ân &amp; Ký Ức</a>
+            <a href="#gallery" class="mobile-drawer-link">📸 Khoảnh Khắc</a>
+            <a href="#event" class="mobile-drawer-link">📍 Thời Gian &amp; Tọa Độ</a>
+        </div>
+        <div class="mobile-drawer-actions">
+            <button type="button" class="nav-btn-envelope" id="mobile-btn-replay-envelope">✉️ Mở Lại Phong Thư</button>
+            <a href="#guestbook" class="nav-btn-rsvp mobile-drawer-rsvp">✍️ Viết Lưu Bút</a>
+        </div>
+    </aside>
 
     <div class="page-container">
         <!-- ==========================================
@@ -166,7 +204,8 @@
         <header id="hero" class="hero-showcase">
             <div>
                 <div class="hero-badge-strip">
-                    <span>⚡ ĐẠI HỌC BÁCH KHOA TP.HCM · KHÓA 2021 – 2026</span>
+                    <span class="badge-live-dot" aria-hidden="true"></span>
+                    <span>ĐẠI HỌC BÁCH KHOA TP.HCM · KHÓA 2021 – 2026</span>
                 </div>
 
                 <h1 class="hero-main-title">Phạm Minh Phương</h1>
@@ -253,6 +292,16 @@
                             </p>
                         </div>
 
+                        <div class="energy-milestone-wrap" aria-live="polite">
+                            <div class="energy-milestone-head">
+                                <span id="energy-milestone-label">🔋 Pin Chúc Mừng K21: 0/10 tia sáng đến mốc Bùng Nổ Pháo Hoa</span>
+                                <strong id="energy-milestone-pct">0%</strong>
+                            </div>
+                            <div class="energy-progress-track">
+                                <div class="energy-progress-fill" id="energy-progress-fill"></div>
+                            </div>
+                        </div>
+
                         <div class="letter-bottom-bar">
                             <button type="button" class="btn-spark-tribute" id="btn-spark-tribute" title="Gửi thêm một tia sáng chúc mừng tới Phương">
                                 <span class="spark-icon">⚡</span>
@@ -323,7 +372,7 @@
 
                 <div class="photo-gallery-grid">
                     <!-- Ảnh 1: Vinh danh ngày tốt nghiệp (Featured Wide) -->
-                    <article class="gallery-card featured-wide" onclick="openPhotoModal(this)">
+                    <article class="gallery-card featured-wide" data-photo-idx="0" onclick="openPhotoModal(this)">
                         <div class="gallery-img-wrapper">
                             <img src="assets/images/photo-ceremony.svg" alt="Tung mũ cử nhân ngày tốt nghiệp">
                         </div>
@@ -331,10 +380,15 @@
                             <span class="photo-caption-title">🎓 Ngày Vinh Danh Tân Kỹ Sư — Tung Mũ Cử Nhân</span>
                             <span class="photo-year-tag">2026</span>
                         </div>
+                        <div class="gallery-reaction-strip" aria-label="Thả cảm xúc ảnh">
+                            <button type="button" class="photo-react-btn" data-photo="0" data-react="heart">❤️ <span>28</span></button>
+                            <button type="button" class="photo-react-btn" data-photo="0" data-react="cap">🎓 <span>19</span></button>
+                            <button type="button" class="photo-react-btn" data-photo="0" data-react="bolt">⚡ <span>21</span></button>
+                        </div>
                     </article>
 
                     <!-- Ảnh 2: Cổng trường 268 Lý Thường Kiệt -->
-                    <article class="gallery-card" onclick="openPhotoModal(this)">
+                    <article class="gallery-card" data-photo-idx="1" onclick="openPhotoModal(this)">
                         <div class="gallery-img-wrapper">
                             <img src="assets/images/photo-gate.svg" alt="Cổng trường ĐH Bách Khoa TP.HCM">
                         </div>
@@ -342,10 +396,15 @@
                             <span class="photo-caption-title">🏛️ Cổng Trường A2 Bách Khoa</span>
                             <span class="photo-year-tag">2021</span>
                         </div>
+                        <div class="gallery-reaction-strip" aria-label="Thả cảm xúc ảnh">
+                            <button type="button" class="photo-react-btn" data-photo="1" data-react="heart">❤️ <span>16</span></button>
+                            <button type="button" class="photo-react-btn" data-photo="1" data-react="cap">🎓 <span>12</span></button>
+                            <button type="button" class="photo-react-btn" data-photo="1" data-react="bolt">⚡ <span>14</span></button>
+                        </div>
                     </article>
 
                     <!-- Ảnh 3: Phòng Lab Năng lượng -->
-                    <article class="gallery-card" onclick="openPhotoModal(this)">
+                    <article class="gallery-card" data-photo-idx="2" onclick="openPhotoModal(this)">
                         <div class="gallery-img-wrapper">
                             <img src="assets/images/photo-lab.svg" alt="Phòng thí nghiệm Điện Hóa & Pin">
                         </div>
@@ -353,10 +412,15 @@
                             <span class="photo-caption-title">🔋 Phòng Lab Điện Hóa & Pin</span>
                             <span class="photo-year-tag">2024</span>
                         </div>
+                        <div class="gallery-reaction-strip" aria-label="Thả cảm xúc ảnh">
+                            <button type="button" class="photo-react-btn" data-photo="2" data-react="heart">❤️ <span>18</span></button>
+                            <button type="button" class="photo-react-btn" data-photo="2" data-react="cap">🎓 <span>11</span></button>
+                            <button type="button" class="photo-react-btn" data-photo="2" data-react="bolt">⚡ <span>24</span></button>
+                        </div>
                     </article>
 
                     <!-- Ảnh 4: Đồng môn Bách Khoa -->
-                    <article class="gallery-card" onclick="openPhotoModal(this)">
+                    <article class="gallery-card" data-photo-idx="3" onclick="openPhotoModal(this)">
                         <div class="gallery-img-wrapper">
                             <img src="assets/images/photo-friends.svg" alt="Bạn bè đồng môn K21">
                         </div>
@@ -364,10 +428,15 @@
                             <span class="photo-caption-title">👥 Đồng Môn Kỹ Thuật Năng Lượng</span>
                             <span class="photo-year-tag">K21</span>
                         </div>
+                        <div class="gallery-reaction-strip" aria-label="Thả cảm xúc ảnh">
+                            <button type="button" class="photo-react-btn" data-photo="3" data-react="heart">❤️ <span>22</span></button>
+                            <button type="button" class="photo-react-btn" data-photo="3" data-react="cap">🎓 <span>15</span></button>
+                            <button type="button" class="photo-react-btn" data-photo="3" data-react="bolt">⚡ <span>17</span></button>
+                        </div>
                     </article>
 
                     <!-- Ảnh 5: Quân sự Dĩ An -->
-                    <article class="gallery-card" onclick="openPhotoModal(this)">
+                    <article class="gallery-card" data-photo-idx="4" onclick="openPhotoModal(this)">
                         <div class="gallery-img-wrapper">
                             <img src="assets/images/photo-military.svg" alt="Mùa quân sự Dĩ An">
                         </div>
@@ -375,7 +444,65 @@
                             <span class="photo-caption-title">🏕️ Kỷ Niệm Quân Sự Dĩ An</span>
                             <span class="photo-year-tag">2023</span>
                         </div>
+                        <div class="gallery-reaction-strip" aria-label="Thả cảm xúc ảnh">
+                            <button type="button" class="photo-react-btn" data-photo="4" data-react="heart">❤️ <span>20</span></button>
+                            <button type="button" class="photo-react-btn" data-photo="4" data-react="cap">🎓 <span>13</span></button>
+                            <button type="button" class="photo-react-btn" data-photo="4" data-react="bolt">⚡ <span>19</span></button>
+                        </div>
                     </article>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 MINI-GAME TƯƠNG TÁC: ĐỘ HIỂU TÂN KỸ SƯ PHƯƠNG
+                 ========================================== -->
+            <section id="fun-quiz" class="content-section">
+                <div class="section-head-compact">
+                    <div>
+                        <span class="section-tag-bk">Góc Tương Tác K21</span>
+                        <h2 class="section-title-bold">Bạn Hiểu Tân Kỹ Sư Phương Tới Đâu?</h2>
+                    </div>
+                    <span class="story-period-pill">🎮 Trả lời 3 câu · Mở khóa Danh hiệu Thẻ VIP</span>
+                </div>
+
+                <div class="quiz-card-shell">
+                    <div class="quiz-stage" id="quiz-stage">
+                        <div class="quiz-stage-top">
+                            <span class="quiz-step-pill" id="quiz-step-pill">Câu 1 / 3</span>
+                            <div class="quiz-step-track" aria-hidden="true">
+                                <div class="quiz-step-fill" id="quiz-step-fill" style="width: 33.3%;"></div>
+                            </div>
+                        </div>
+
+                        <h3 class="quiz-question-text" id="quiz-question-text">
+                            Hành trình 5 năm Bách Khoa của Phương (2021 – 2026) thuộc chuyên ngành nào?
+                        </h3>
+
+                        <div class="quiz-options-list" id="quiz-options-list" role="radiogroup" aria-label="Chọn đáp án đúng">
+                            <!-- Render bởi JS -->
+                        </div>
+
+                        <div class="quiz-feedback-box" id="quiz-feedback-box" hidden></div>
+
+                        <div class="quiz-stage-actions">
+                            <button type="button" class="btn-quiz-next" id="btn-quiz-next" hidden>Câu Tiếp Theo →</button>
+                            <button type="button" class="btn-quiz-restart" id="btn-quiz-restart" hidden>↻ Chơi Lại Thử Thách</button>
+                        </div>
+                    </div>
+
+                    <aside class="quiz-reward-card" id="quiz-reward-card" aria-live="polite">
+                        <div class="quiz-reward-badge" id="quiz-reward-badge">🔒 CHƯA MỞ KHÓA</div>
+                        <div class="quiz-reward-icon" id="quiz-reward-icon">🎓</div>
+                        <h4 class="quiz-reward-title" id="quiz-reward-title">Huy Hiệu Khách Mời</h4>
+                        <p class="quiz-reward-desc" id="quiz-reward-desc">
+                            Hoàn thành thử thách 3 câu hỏi nhỏ để nâng cấp danh hiệu trên Thẻ Lưu Niệm của bạn!
+                        </p>
+                        <div class="quiz-score-meter">
+                            <span>Điểm chính xác:</span>
+                            <strong id="quiz-score-value">0 / 3</strong>
+                        </div>
+                        <a href="#guestbook" class="btn-quiz-apply" id="btn-quiz-apply">✍️ Áp Dụng Vào Sổ Lưu Bút ↓</a>
+                    </aside>
                 </div>
             </section>
 
@@ -391,41 +518,65 @@
                 </div>
 
                 <div class="event-box-clean">
-                    <!-- Đồng hồ đếm ngược -->
+                    <!-- Đồng hồ đếm ngược (AntD Statistic Tiles) -->
                     <div class="countdown-box">
-                        <div class="countdown-digits" id="countdown">00 : 00 : 00 : 00</div>
+                        <div class="countdown-eyebrow">
+                            <span class="badge-live-dot" aria-hidden="true"></span>
+                            <span>ĐẾM NGƯỢC ĐẾN NGÀY TỐT NGHIỆP</span>
+                        </div>
+                        <div class="countdown-digits" id="countdown">
+                            <span class="cd-tile" data-unit="days">00</span>
+                            <span class="cd-tile" data-unit="hours">00</span>
+                            <span class="cd-tile" data-unit="mins">00</span>
+                            <span class="cd-tile" data-unit="secs">00</span>
+                        </div>
                         <div class="countdown-labels">
                             <span>Ngày</span>
                             <span>Giờ</span>
                             <span>Phút</span>
                             <span>Giây</span>
                         </div>
-                        <div style="margin-top: 14px; font-size: 0.85rem; color: var(--bk-blue); font-weight: 700;">
-                            ✦ ĐẾM NGƯỢC ĐẾN NGÀY TỐT NGHIỆP ✦
-                        </div>
                     </div>
 
-                    <!-- Thông tin chi tiết -->
+                    <!-- Thông tin chi tiết (AntD Descriptions List) -->
                     <div class="event-details-col">
-                        <div class="event-line-item">
-                            <strong>Thời gian:</strong> 08:00 AM — Thứ Bảy, Ngày 28/11/2026
+                        <div class="event-meta-list">
+                            <div class="event-line-item">
+                                <span class="event-meta-icon" aria-hidden="true">🕒</span>
+                                <div>
+                                    <span class="event-meta-label">Thời gian</span>
+                                    <span class="event-meta-val">08:00 AM — Thứ Bảy, Ngày 28/11/2026</span>
+                                </div>
+                            </div>
+                            <div class="event-line-item">
+                                <span class="event-meta-icon" aria-hidden="true">🏛️</span>
+                                <div>
+                                    <span class="event-meta-label">Địa điểm</span>
+                                    <span class="event-meta-val">Hội trường A5 / C2 — Cơ sở 1</span>
+                                </div>
+                            </div>
+                            <div class="event-line-item">
+                                <span class="event-meta-icon" aria-hidden="true">📍</span>
+                                <div>
+                                    <span class="event-meta-label">Địa chỉ</span>
+                                    <span class="event-meta-val" id="event-address">268 Lý Thường Kiệt, Phường 14, Quận 10, TP.HCM</span>
+                                </div>
+                            </div>
+                            <div class="event-line-item">
+                                <span class="event-meta-icon" aria-hidden="true">📞</span>
+                                <div>
+                                    <span class="event-meta-label">Liên hệ đón tiếp</span>
+                                    <div class="event-contact-links">
+                                        <a href="tel:+84367095410" class="contact-inline-pill phone">📞 0367 095 410</a>
+                                        <a href="https://zalo.me/0367095410" target="_blank" rel="noopener noreferrer" class="contact-inline-pill zalo">💬 Zalo</a>
+                                        <a href="https://www.facebook.com/phuong.phamminh.90281" target="_blank" rel="noopener noreferrer" class="contact-inline-pill fb">📘 Facebook</a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="event-line-item">
-                            <strong>Địa điểm:</strong> Hội trường A5 / C2 — Cơ sở 1
-                        </div>
-                        <div class="event-line-item">
-                            <strong>Địa chỉ:</strong> <span id="event-address">268 Lý Thường Kiệt, Phường 14, Quận 10, TP.HCM</span>
-                        </div>
-                        <div class="event-line-item">
-                            <strong>Liên hệ đón tiếp:</strong> 
-                            <a href="tel:+84367095410" style="color: var(--bk-blue); font-weight: 700; text-decoration: none;">📞 0367 095 410</a>
-                            <span style="color: var(--text-muted); margin: 0 4px;">·</span>
-                            <a href="https://zalo.me/0367095410" target="_blank" rel="noopener noreferrer" style="color: #0068ff; font-weight: 700; text-decoration: none;">💬 Zalo</a>
-                            <span style="color: var(--text-muted); margin: 0 4px;">·</span>
-                            <a href="https://www.facebook.com/phuong.phamminh.90281" target="_blank" rel="noopener noreferrer" style="color: #1877f2; font-weight: 700; text-decoration: none;">📘 Facebook</a>
-                        </div>
-                        <div class="event-line-item" style="color: var(--text-muted); font-size: 0.88rem;">
-                            <em>(Kính mời mọi người có mặt trước 30 phút để cùng trò chuyện và chụp những bức ảnh lưu niệm thật đẹp nhé!)</em>
+                        <div class="event-note-callout">
+                            <span aria-hidden="true">✨</span>
+                            <span>Kính mời mọi người có mặt trước <strong>30 phút</strong> để cùng trò chuyện và chụp những bức ảnh lưu niệm thật đẹp nhé!</span>
                         </div>
 
                         <!-- Cẩm nang đi lễ nhanh tại Campus Bách Khoa -->
@@ -505,6 +656,16 @@
                             <textarea id="guest-message" class="form-input-clean" rows="3" placeholder="Gửi lời chúc mừng tốt nghiệp đến Phương..."></textarea>
                         </div>
 
+                        <div class="form-group-clean">
+                            <label>Quà tặng tinh thần đính kèm Thẻ Lưu Niệm</label>
+                            <div class="gift-chip-grid" id="gift-chip-grid" role="radiogroup" aria-label="Chọn quà tặng tinh thần">
+                                <button type="button" class="gift-chip-btn is-selected" data-gift="💐 Bó Hoa Hướng Dương">💐 Hoa Hướng Dương</button>
+                                <button type="button" class="gift-chip-btn" data-gift="🧸 Gấu Bông Cử Nhân">🧸 Gấu Cử Nhân</button>
+                                <button type="button" class="gift-chip-btn" data-gift="☕ Ly Cà Phê Sáng A5">☕ Cà Phê Sáng</button>
+                                <button type="button" class="gift-chip-btn" data-gift="🔋 Pin Năng Lượng K21">🔋 Pin Năng Lượng</button>
+                            </div>
+                        </div>
+
                         <!-- Thông báo lỗi khi chứa từ ngữ chưa phù hợp -->
                         <div id="guestbook-alert-msg" class="guestbook-alert-error" role="alert"></div>
 
@@ -513,24 +674,34 @@
                         </button>
                     </form>
 
-                    <!-- Thẻ Lưu Niệm Trực Quan -->
+                    <!-- Thẻ Lưu Niệm Trực Quan (Credential Ticket Card) -->
                     <aside id="guestbook-receipt" class="guest-receipt-card" aria-live="polite">
                         <div class="receipt-head">
                             <img src="assets/icons/hcmut-logo.png" alt="Logo BK">
                             <div>
                                 <div class="receipt-title">ĐẠI HỌC BÁCH KHOA TP.HCM</div>
-                                <div style="font-size: 0.75rem; color: var(--bk-cyan); font-weight: 700;">LỄ TỐT NGHIỆP KỸ SƯ 2026</div>
+                                <div class="receipt-subtitle">LỄ TỐT NGHIỆP KỸ SƯ 2026</div>
                             </div>
+                            <span class="receipt-badge-pill" id="receipt-tier-badge">VIP PASS</span>
                         </div>
 
-                        <div class="receipt-row">
-                            Kính gửi: <strong id="receipt-guest-name">Bạn Thân Mến</strong>
-                        </div>
-                        <div class="receipt-row">
-                            Đến chung vui cùng: <strong>Kỹ sư Phạm Minh Phương</strong>
-                        </div>
-                        <div class="receipt-row">
-                            Trạng thái: <span id="receipt-status" style="font-weight: 700; color: var(--bk-blue);">Đang chờ lời chúc</span>
+                        <div class="receipt-meta-list">
+                            <div class="receipt-row">
+                                <span class="receipt-label">Kính gửi</span>
+                                <strong id="receipt-guest-name">Bạn Thân Mến</strong>
+                            </div>
+                            <div class="receipt-row">
+                                <span class="receipt-label">Chung vui cùng</span>
+                                <strong>Kỹ sư Phạm Minh Phương</strong>
+                            </div>
+                            <div class="receipt-row">
+                                <span class="receipt-label">Quà đính kèm</span>
+                                <span id="receipt-gift-badge" class="receipt-gift-tag">💐 Bó Hoa Hướng Dương</span>
+                            </div>
+                            <div class="receipt-row">
+                                <span class="receipt-label">Trạng thái</span>
+                                <span id="receipt-status" class="receipt-status-badge">Đang chờ lời chúc</span>
+                            </div>
                         </div>
 
                         <div class="receipt-quote-box" id="receipt-quote">
@@ -608,10 +779,54 @@
                 <span>🎆</span>
                 <span>Pháo Hoa</span>
             </button>
+            <button type="button" class="fab-action-btn spark-mode" id="fab-spark-mode-btn" role="menuitemcheckbox" aria-checked="false" aria-label="Chế độ chạm đâu nổ pháo đấy">
+                <span>✨</span>
+                <span>Chạm Nổ Pháo</span>
+            </button>
         </div>
         <button type="button" class="fab-main-btn" id="fab-celebrate-btn" aria-label="Mở menu ăn mừng tốt nghiệp" aria-expanded="false">
             <span class="fab-main-icon" aria-hidden="true">🎉</span>
         </button>
+    </div>
+
+    <!-- Dialog Tạo Link Mời Cá Nhân Hóa (shadcn Dialog) -->
+    <div class="share-dialog-overlay" id="share-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="share-dialog-title">
+        <div class="share-dialog-card">
+            <div class="share-dialog-header">
+                <div>
+                    <span class="share-dialog-eyebrow">CÁ NHÂN HÓA THIỆP MỜI</span>
+                    <h3 class="share-dialog-title" id="share-dialog-title">Gửi Thiệp Mang Tên Bạn Thân</h3>
+                </div>
+                <button type="button" class="share-dialog-close" id="share-dialog-close" aria-label="Đóng hộp thoại chia sẻ">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="share-dialog-body">
+                <label class="share-field-label" for="share-recipient-input">Tên người nhận hiển thị trên phong thư &amp; thiệp:</label>
+                <input type="text" id="share-recipient-input" class="form-input-clean share-input" placeholder="Ví dụ: Anh Minh, Nhóm Lab K21, Chị Lan...">
+
+                <div class="share-preset-chips">
+                    <button type="button" class="share-preset-btn" data-name="Bạn Thân Mến">Bạn Thân Mến</button>
+                    <button type="button" class="share-preset-btn" data-name="Team Kỹ Thuật Năng Lượng K21">Team Năng Lượng K21</button>
+                    <button type="button" class="share-preset-btn" data-name="Thầy Cô Kính Mến">Thầy Cô Kính Mến</button>
+                    <button type="button" class="share-preset-btn" data-name="Gia Đình Yêu Thương">Gia Đình Yêu Thương</button>
+                </div>
+
+                <div class="share-preview-box">
+                    <span class="share-preview-caption">Xem trước lời mời:</span>
+                    <div class="share-preview-line">Kính gửi: <strong id="share-preview-name">Bạn Thân Mến</strong></div>
+                    <div class="share-url-chip" id="share-url-preview">...</div>
+                </div>
+            </div>
+
+            <div class="share-dialog-footer">
+                <button type="button" class="btn-bk-outline share-btn-action" id="btn-preview-personal-env">✉️ Mở Thử Phong Thư</button>
+                <button type="button" class="btn-bk-primary share-btn-action" id="btn-copy-personal-link">📋 Sao Chép Link Riêng</button>
+            </div>
+        </div>
     </div>
 
     <!-- Nút Cuộn Lên Đầu Trang (Back to Top) -->

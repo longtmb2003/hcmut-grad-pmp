@@ -6,6 +6,10 @@
 // Thời gian Lễ Tốt Nghiệp: 08:00 sáng ngày 28/11/2026
 const GRADUATION_DATE = new Date("2026-11-28T08:00:00+07:00").getTime();
 
+// URL Google Apps Script Web App để đồng bộ Sổ Lưu Bút với Google Sheets của Phạm Minh Phương
+// (Để trống nếu chỉ dùng lưu tạm localStorage trên trình duyệt)
+const GOOGLE_SHEETS_WEBAPP_URL = "";
+
 let celebrationEngine = null;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -178,6 +182,68 @@ function checkProfanity(rawText) {
 }
 
 /**
+ * Chuẩn hóa khoảng trắng và validate tên người dùng / lời chúc
+ */
+function sanitizeTextWhitespace(raw) {
+    return (raw || "").replace(/\s+/g, " ").trim();
+}
+
+function validateUserName(rawName, { required = true } = {}) {
+    const clean = sanitizeTextWhitespace(rawName);
+    if (!clean) {
+        return required
+            ? { valid: false, value: "", error: "Vui lòng nhập họ tên hoặc biệt danh của bạn (từ 2–60 ký tự)." }
+            : { valid: true, value: "" };
+    }
+
+    if (clean.length < 2 || clean.length > 60) {
+        return { valid: false, value: clean, error: "Tên người dùng cần dài từ 2 đến 60 ký tự." };
+    }
+
+    if (/[<>]/.test(clean) || /(?:https?:\/\/|www\.)/i.test(clean)) {
+        return { valid: false, value: clean, error: "Tên không được chứa thẻ HTML hoặc đường dẫn URL." };
+    }
+
+    const letters = clean.match(/\p{L}/gu) || [];
+    if (letters.length < 2) {
+        return { valid: false, value: clean, error: "Tên cần có ít nhất 2 chữ cái hợp lệ (không chỉ gồm số hoặc ký tự đặc biệt)." };
+    }
+
+    if (/[^\p{L}\p{N}\s.'\-/&,]/u.test(clean)) {
+        return { valid: false, value: clean, error: "Tên chỉ nên gồm chữ cái, số (vd: K21), dấu chấm, gạch nối hoặc dấu &." };
+    }
+
+    if (/(.)\1{4,}/u.test(clean.toLowerCase())) {
+        return { valid: false, value: clean, error: "Tên chứa chuỗi ký tự lặp bất thường, vui lòng nhập tên hoặc biệt danh thật nhé!" };
+    }
+
+    if (checkProfanity(clean)) {
+        return { valid: false, value: clean, error: "Tên có chứa từ ngữ chưa phù hợp. Vui lòng nhập tên lịch sự nhé!" };
+    }
+
+    return { valid: true, value: clean };
+}
+
+function validateGuestMessage(rawMsg) {
+    const clean = sanitizeTextWhitespace(rawMsg);
+    if (!clean) return { valid: true, value: "" };
+
+    if (clean.length > 500) {
+        return { valid: false, value: clean, error: "Lời chúc tối đa 500 ký tự để hiển thị đẹp trên thẻ lưu niệm." };
+    }
+
+    if (/[<>]/.test(clean) || /(?:https?:\/\/|www\.)/i.test(clean)) {
+        return { valid: false, value: clean, error: "Lời chúc không được chứa mã HTML hoặc liên kết web." };
+    }
+
+    if (checkProfanity(clean)) {
+        return { valid: false, value: clean, error: "Lời nhắn có chứa từ ngữ chưa phù hợp. Vui lòng gửi những lời chúc văn minh và tốt đẹp đến Tân Kỹ sư nhé!" };
+    }
+
+    return { valid: true, value: clean };
+}
+
+/**
  * 3. Xử lý Form Sổ Lưu Bút, Validate Từ Ngữ & Thẻ Kỷ Niệm
  */
 function initGuestbook() {
@@ -195,12 +261,11 @@ function initGuestbook() {
     const attendanceInput = document.getElementById("guest-attendance");
     const messageInput = document.getElementById("guest-message");
 
-    // Tự động xóa cảnh báo lỗi & cập nhật Thẻ Lưu Niệm theo thời gian thực
     const syncLiveReceipt = () => {
-        const liveName = nameInput ? nameInput.value.trim() : "";
+        const liveName = sanitizeTextWhitespace(nameInput ? nameInput.value : "");
         const liveRel = relationInput ? relationInput.value : "";
         const liveAtt = attendanceInput ? attendanceInput.value : "yes";
-        const liveMsg = messageInput ? messageInput.value.trim() : "";
+        const liveMsg = sanitizeTextWhitespace(messageInput ? messageInput.value : "");
 
         if (guestNameDisplay) {
             if (liveName) {
@@ -230,55 +295,71 @@ function initGuestbook() {
         }
     };
 
+    const showFieldError = (msg, targetInput) => {
+        if (alertBox) {
+            alertBox.textContent = `⚠️ ${msg}`;
+            alertBox.style.display = "block";
+        }
+        if (targetInput) {
+            targetInput.classList.add("input-has-error");
+            targetInput.focus();
+        }
+    };
+
     const clearError = () => {
         if (alertBox) {
             alertBox.style.display = "none";
             alertBox.textContent = "";
         }
         if (nameInput) nameInput.classList.remove("input-has-error");
+        if (relationInput) relationInput.classList.remove("input-has-error");
         if (messageInput) messageInput.classList.remove("input-has-error");
         syncLiveReceipt();
     };
 
     if (nameInput) nameInput.addEventListener("input", clearError);
     if (messageInput) messageInput.addEventListener("input", clearError);
-    if (relationInput) relationInput.addEventListener("change", syncLiveReceipt);
+    if (relationInput) {
+        relationInput.addEventListener("change", () => {
+            clearError();
+        });
+    }
     if (attendanceInput) attendanceInput.addEventListener("change", syncLiveReceipt);
 
     form.addEventListener("submit", (e) => {
         e.preventDefault();
 
-        const name = nameInput ? nameInput.value.trim() : "";
+        const rawName = nameInput ? nameInput.value : "";
         const relation = relationInput ? relationInput.value : "";
         const attendance = attendanceInput ? attendanceInput.value : "yes";
-        const message = messageInput ? messageInput.value.trim() : "";
+        const rawMessage = messageInput ? messageInput.value : "";
 
-        // ==========================================
-        // VALIDATE: TRÁNH TỪ NGỮ THÔ TỤC / CHỬI BẬY
-        // ==========================================
-        const hasBadName = checkProfanity(name);
-        const hasBadMessage = checkProfanity(message);
+        // Validate Tên người dùng
+        const nameCheck = validateUserName(rawName, { required: true });
+        if (!nameCheck.valid) {
+            showFieldError(nameCheck.error, nameInput);
+            return;
+        }
 
-        if (hasBadName || hasBadMessage) {
-            if (alertBox) {
-                alertBox.textContent = "⚠️ Tên hoặc lời nhắn có chứa từ ngữ chưa phù hợp. Vui lòng gửi những lời chúc văn minh và tốt đẹp đến Tân Kỹ sư nhé!";
-                alertBox.style.display = "block";
-            }
+        // Validate Vai trò / Mối quan hệ nếu được đánh dấu bắt buộc
+        if (relationInput && relationInput.hasAttribute("required") && !relation) {
+            showFieldError("Vui lòng chọn vai trò / mối quan hệ của bạn với Phương nhé!", relationInput);
+            return;
+        }
 
-            if (hasBadName && nameInput) {
-                nameInput.classList.add("input-has-error");
-                nameInput.focus();
-            } else if (hasBadMessage && messageInput) {
-                messageInput.classList.add("input-has-error");
-                messageInput.focus();
-            }
-            return; // Dừng lại, không submit!
+        // Validate Lời chúc
+        const msgCheck = validateGuestMessage(rawMessage);
+        if (!msgCheck.valid) {
+            showFieldError(msgCheck.error, messageInput);
+            return;
         }
 
         clearError();
+        if (nameInput) nameInput.value = nameCheck.value;
+        if (messageInput) messageInput.value = msgCheck.value;
 
-        const finalName = name || "Bạn";
-        const finalMessage = message || "Chúc Kỹ sư Phạm Minh Phương luôn tràn đầy năng lượng, giữ trọn nhiệt huyết Bách Khoa và vươn xa trên con đường sự nghiệp!";
+        const finalName = nameCheck.value;
+        const finalMessage = msgCheck.value || "Chúc Kỹ sư Phạm Minh Phương luôn tràn đầy năng lượng, giữ trọn nhiệt huyết Bách Khoa và vươn xa trên con đường sự nghiệp!";
 
         if (guestNameDisplay) {
             guestNameDisplay.textContent = relation ? `${finalName} (${relation})` : finalName;
@@ -301,10 +382,10 @@ function initGuestbook() {
             quoteDisplay.textContent = `"${finalMessage}"`;
         }
 
-        // Thêm lời chúc vào Bảng tin Lời Chúc Thời Gian Thực
+        // Thêm lời chúc vào Bảng tin & đồng bộ Google Sheets (nếu đã cấu hình URL)
         const selectedGiftBtn = document.querySelector(".gift-chip-btn.is-selected");
         const selectedGift = selectedGiftBtn ? selectedGiftBtn.getAttribute("data-gift") : "💐 Bó Hoa Hướng Dương";
-        addWishToList(finalName, relation, finalMessage, selectedGift);
+        addWishToList(finalName, relation, finalMessage, selectedGift, attendance);
 
         // Combo pháo hoa + tung mũ cử nhân rực rỡ
         if (celebrationEngine) {
@@ -375,7 +456,7 @@ function initPhotoModal() {
                         <path d="M15 18l-6-6 6-6"/>
                     </svg>
                 </button>
-                <img id="modal-image" src="" alt="Khoảnh khắc kỷ niệm Bách Khoa">
+                <img id="modal-image" alt="Khoảnh khắc kỷ niệm Bách Khoa" hidden>
                 <button type="button" class="photo-dialog-nav next" id="modal-next-btn" aria-label="Ảnh tiếp theo">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 18l6-6-6-6"/>
@@ -396,6 +477,20 @@ function initPhotoModal() {
         const nextIndex = (activeModalIndex + delta + galleryCardsCache.length) % galleryCardsCache.length;
         openPhotoModal(galleryCardsCache[nextIndex], false);
     };
+
+    galleryCardsCache.forEach((card) => {
+        card.addEventListener("click", (e) => {
+            if (e.target.closest(".photo-react-btn")) return;
+            openPhotoModal(card, true);
+        });
+        card.addEventListener("keydown", (e) => {
+            if (e.target.closest(".photo-react-btn")) return;
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openPhotoModal(card, true);
+            }
+        });
+    });
 
     modal.addEventListener("click", (e) => {
         if (e.target === modal) closeModal();
@@ -440,6 +535,7 @@ function openPhotoModal(cardEl, triggerCaps = true) {
     if (img) {
         modalImg.src = img.src;
         modalImg.alt = img.alt || "Khoảnh khắc Bách Khoa";
+        modalImg.hidden = false;
     }
     if (modalTitle) modalTitle.textContent = title ? title.textContent : "Khoảnh khắc Bách Khoa";
     if (modalBadge) modalBadge.textContent = year ? year.textContent : "2026";
@@ -551,6 +647,7 @@ function initShareButton() {
     const overlay = document.getElementById("share-dialog-overlay");
     const closeBtn = document.getElementById("share-dialog-close");
     const inputEl = document.getElementById("share-recipient-input");
+    const errorEl = document.getElementById("share-name-error");
     const previewNameEl = document.getElementById("share-preview-name");
     const urlPreviewEl = document.getElementById("share-url-preview");
     const copyLinkBtn = document.getElementById("btn-copy-personal-link");
@@ -563,7 +660,7 @@ function initShareButton() {
         try {
             const url = new URL(window.location.href);
             url.hash = "";
-            const trimmed = (rawName || "").trim();
+            const trimmed = sanitizeTextWhitespace(rawName);
             if (trimmed && trimmed !== "Bạn Thân Mến") {
                 url.searchParams.set("to", trimmed);
             } else {
@@ -575,16 +672,52 @@ function initShareButton() {
         }
     }
 
+    function setShareError(msg) {
+        if (errorEl) {
+            if (msg) {
+                errorEl.textContent = `⚠️ ${msg}`;
+                errorEl.hidden = false;
+            } else {
+                errorEl.textContent = "";
+                errorEl.hidden = true;
+            }
+        }
+        if (inputEl) {
+            inputEl.classList.toggle("input-has-error", Boolean(msg));
+        }
+    }
+
     function syncSharePreview() {
-        const name = (inputEl ? inputEl.value.trim() : "") || "Bạn Thân Mến";
-        if (previewNameEl) previewNameEl.textContent = name;
-        if (urlPreviewEl) urlPreviewEl.textContent = buildPersonalUrl(name);
+        const raw = inputEl ? inputEl.value : "";
+        const check = validateUserName(raw, { required: false });
+        if (!check.valid) {
+            setShareError(check.error);
+        } else {
+            setShareError("");
+        }
+
+        const safeDisplay = (check.valid && check.value) ? check.value : "Bạn Thân Mến";
+        if (previewNameEl) previewNameEl.textContent = safeDisplay;
+        if (urlPreviewEl) urlPreviewEl.textContent = buildPersonalUrl(safeDisplay);
+    }
+
+    function getValidatedShareName() {
+        const raw = inputEl ? inputEl.value : "";
+        const check = validateUserName(raw, { required: false });
+        if (!check.valid) {
+            setShareError(check.error);
+            if (inputEl) inputEl.focus();
+            return null;
+        }
+        setShareError("");
+        return check.value || "Bạn Thân Mến";
     }
 
     function setShareDialogOpen(isOpen) {
         if (!overlay) return;
         overlay.classList.toggle("is-open", isOpen);
         if (isOpen) {
+            setShareError("");
             syncSharePreview();
             if (inputEl) setTimeout(() => inputEl.focus(), 80);
         }
@@ -620,7 +753,9 @@ function initShareButton() {
 
     if (copyLinkBtn) {
         copyLinkBtn.addEventListener("click", async () => {
-            const name = (inputEl ? inputEl.value.trim() : "") || "Bạn Thân Mến";
+            const name = getValidatedShareName();
+            if (!name) return;
+
             const finalUrl = buildPersonalUrl(name);
             try {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -642,7 +777,9 @@ function initShareButton() {
 
     if (previewEnvBtn) {
         previewEnvBtn.addEventListener("click", () => {
-            const name = (inputEl ? inputEl.value.trim() : "") || "Bạn Thân Mến";
+            const name = getValidatedShareName();
+            if (!name) return;
+
             const envName = document.getElementById("env-recipient-name");
             const cardName = document.getElementById("env-card-recipient");
             const receiptName = document.getElementById("receipt-guest-name");
@@ -1144,6 +1281,65 @@ const DEFAULT_WISHES = [
     }
 ];
 
+async function syncWishToGoogleSheets(wishEntry) {
+    const endpoint = sanitizeTextWhitespace(GOOGLE_SHEETS_WEBAPP_URL);
+    if (!endpoint) return { synced: false, reason: "not_configured" };
+
+    try {
+        // Dùng text/plain để tránh lỗi CORS Preflight OPTIONS của Google Apps Script Web App
+        const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+                action: "create",
+                ...wishEntry
+            })
+        });
+        if (!res.ok) return { synced: false, reason: `http_${res.status}` };
+        const data = await res.json().catch(() => ({}));
+        return { synced: true, data };
+    } catch (err) {
+        console.warn("Không thể đồng bộ Google Sheets (đã lưu tạm localStorage):", err);
+        return { synced: false, reason: "network_error" };
+    }
+}
+
+async function loadWishesFromGoogleSheets() {
+    const endpoint = sanitizeTextWhitespace(GOOGLE_SHEETS_WEBAPP_URL);
+    if (!endpoint) return null;
+
+    try {
+        const sep = endpoint.includes("?") ? "&" : "?";
+        const res = await fetch(`${endpoint}${sep}action=list&t=${Date.now()}`, {
+            method: "GET"
+        });
+        if (!res.ok) return null;
+
+        const payload = await res.json();
+        const rows = Array.isArray(payload) ? payload : (Array.isArray(payload.wishes) ? payload.wishes : []);
+        const validRows = rows
+            .map((r) => ({
+                name: sanitizeTextWhitespace(r.name || r.Name || ""),
+                relation: sanitizeTextWhitespace(r.relation || r.Relation || "Bạn bè / Đồng môn"),
+                message: sanitizeTextWhitespace(r.message || r.Message || ""),
+                gift: sanitizeTextWhitespace(r.gift || r.Gift || ""),
+                time: sanitizeTextWhitespace(r.time || r.Timestamp || "Đã lưu trên Google Sheets")
+            }))
+            .filter((r) => r.name && r.message);
+
+        if (validRows.length === 0) return null;
+
+        try {
+            localStorage.setItem("pmp_grad_wishes", JSON.stringify(validRows));
+        } catch (e) {}
+        renderWishes(validRows);
+        return validRows;
+    } catch (err) {
+        console.warn("Không thể tải lời chúc từ Google Sheets, giữ dữ liệu cục bộ:", err);
+        return null;
+    }
+}
+
 function initRecentWishes() {
     const listEl = document.getElementById("recent-wishes-list");
     if (!listEl) return;
@@ -1166,6 +1362,10 @@ function initRecentWishes() {
     }
 
     renderWishes(wishes);
+
+    if (sanitizeTextWhitespace(GOOGLE_SHEETS_WEBAPP_URL)) {
+        loadWishesFromGoogleSheets();
+    }
 }
 
 function renderWishes(wishes) {
@@ -1201,7 +1401,7 @@ function renderWishes(wishes) {
     }).join("");
 }
 
-function addWishToList(name, relation, message, gift = "") {
+function addWishToList(name, relation, message, gift = "", attendance = "yes") {
     let wishes = [];
     try {
         const stored = localStorage.getItem("pmp_grad_wishes");
@@ -1214,19 +1414,24 @@ function addWishToList(name, relation, message, gift = "") {
         wishes = [...DEFAULT_WISHES];
     }
 
-    wishes.unshift({
+    const entry = {
         name,
         relation: relation || "Bạn bè / Đồng môn",
+        attendance: attendance || "yes",
         message,
         gift,
-        time: "Vừa xong"
-    });
+        time: "Vừa xong",
+        createdAt: new Date().toISOString()
+    };
+
+    wishes.unshift(entry);
 
     try {
         localStorage.setItem("pmp_grad_wishes", JSON.stringify(wishes));
     } catch (e) {}
 
     renderWishes(wishes);
+    syncWishToGoogleSheets(entry);
 }
 
 function escapeHtml(str) {
@@ -1700,12 +1905,13 @@ function initEnvelopeExperience() {
     let isAnimating = false;
     let focusTimer = null;
 
-    // Cá nhân hóa tên khách mời nếu URL có tham số ?to=TenKhach
+    // Cá nhân hóa tên khách mời nếu URL có tham số ?to=TenKhach (đã validate chống XSS/spam)
     try {
         const params = new URLSearchParams(window.location.search);
         const toName = params.get("to");
-        if (toName && toName.trim()) {
-            const cleanName = toName.trim();
+        const toCheck = validateUserName(toName, { required: false });
+        if (toCheck.valid && toCheck.value) {
+            const cleanName = toCheck.value;
             if (recipientDisplay) recipientDisplay.textContent = cleanName;
             if (cardRecipientDisplay) cardRecipientDisplay.textContent = cleanName;
             const receiptName = document.getElementById("receipt-guest-name");

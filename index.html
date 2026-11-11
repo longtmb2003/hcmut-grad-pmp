@@ -255,7 +255,7 @@
                         <div class="floating-name">Phạm Minh Phương</div>
                         <div class="floating-sub">Khóa 2021 – 2026 · Kỹ thuật Năng lượng</div>
                     </div>
-                    <span style="font-size: 1.5rem;">🎓</span>
+                    <span class="floating-cap-emoji" aria-hidden="true">🎓</span>
                 </div>
             </div>
         </header>
@@ -365,14 +365,14 @@
                         <span class="section-tag-bk">Khoảnh Khắc Đáng Nhớ</span>
                         <h2 class="section-title-bold">Góc Ảnh Thanh Xuân Bách Khoa</h2>
                     </div>
-                    <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">
+                    <span class="section-hint-text">
                         ✦ Click vào ảnh để xem chi tiết
                     </span>
                 </div>
 
                 <div class="photo-gallery-grid">
                     <!-- Ảnh 1: Vinh danh ngày tốt nghiệp (Featured Wide) -->
-                    <article class="gallery-card featured-wide" data-photo-idx="0" onclick="openPhotoModal(this)">
+                    <article class="gallery-card featured-wide" data-photo-idx="0" tabindex="0" role="button" aria-label="Xem ảnh Ngày Vinh Danh Tân Kỹ Sư">
                         <div class="gallery-img-wrapper">
                             <img src="assets/images/photo-ceremony.svg" alt="Tung mũ cử nhân ngày tốt nghiệp">
                         </div>
@@ -388,7 +388,7 @@
                     </article>
 
                     <!-- Ảnh 2: Cổng trường 268 Lý Thường Kiệt -->
-                    <article class="gallery-card" data-photo-idx="1" onclick="openPhotoModal(this)">
+                    <article class="gallery-card" data-photo-idx="1" tabindex="0" role="button" aria-label="Xem ảnh Cổng Trường A2 Bách Khoa">
                         <div class="gallery-img-wrapper">
                             <img src="assets/images/photo-gate.svg" alt="Cổng trường ĐH Bách Khoa TP.HCM">
                         </div>
@@ -404,7 +404,7 @@
                     </article>
 
                     <!-- Ảnh 3: Phòng Lab Năng lượng -->
-                    <article class="gallery-card" data-photo-idx="2" onclick="openPhotoModal(this)">
+                    <article class="gallery-card" data-photo-idx="2" tabindex="0" role="button" aria-label="Xem ảnh Phòng Lab Điện Hóa và Pin">
                         <div class="gallery-img-wrapper">
                             <img src="assets/images/photo-lab.svg" alt="Phòng thí nghiệm Điện Hóa & Pin">
                         </div>
@@ -420,7 +420,7 @@
                     </article>
 
                     <!-- Ảnh 4: Đồng môn Bách Khoa -->
-                    <article class="gallery-card" data-photo-idx="3" onclick="openPhotoModal(this)">
+                    <article class="gallery-card" data-photo-idx="3" tabindex="0" role="button" aria-label="Xem ảnh Đồng Môn Kỹ Thuật Năng Lượng">
                         <div class="gallery-img-wrapper">
                             <img src="assets/images/photo-friends.svg" alt="Bạn bè đồng môn K21">
                         </div>
@@ -436,7 +436,7 @@
                     </article>
 
                     <!-- Ảnh 5: Quân sự Dĩ An -->
-                    <article class="gallery-card" data-photo-idx="4" onclick="openPhotoModal(this)">
+                    <article class="gallery-card" data-photo-idx="4" tabindex="0" role="button" aria-label="Xem ảnh Kỷ Niệm Quân Sự Dĩ An">
                         <div class="gallery-img-wrapper">
                             <img src="assets/images/photo-military.svg" alt="Mùa quân sự Dĩ An">
                         </div>
@@ -609,7 +609,7 @@
             <!-- ==========================================
                  PHẦN 4: SỔ LƯU BÚT CHÚC MỪNG (GUESTBOOK)
                  ========================================== -->
-            <section id="guestbook" class="content-section" style="border-bottom: none;">
+            <section id="guestbook" class="content-section">
                 <div class="section-head-compact">
                     <div>
                         <span class="section-tag-bk">Sổ Ký Tên Danh Dự</span>
@@ -619,10 +619,10 @@
 
                 <div class="guestbook-clean-grid">
                     <!-- Form lưu bút -->
-                    <form id="guestbook-form" class="guestbook-card">
+                    <form id="guestbook-form" class="guestbook-card" novalidate>
                         <div class="form-group-clean">
                             <label for="guest-name">Tên hoặc Danh xưng của bạn *</label>
-                            <input type="text" id="guest-name" class="form-input-clean" placeholder="Ví dụ: Bạn Nam / Chị Mai / Cô Lan..." required>
+                            <input type="text" id="guest-name" class="form-input-clean" placeholder="Ví dụ: Bạn Nam / Chị Mai / Cô Lan..." minlength="2" maxlength="60" autocomplete="name" required>
                         </div>
 
                         <div class="form-group-clean">
@@ -653,7 +653,7 @@
                                 <button type="button" class="wish-chip-btn" data-wish="Chúc kỹ sư Năng lượng K21 giữ mãi ngọn lửa nhiệt huyết Bách Khoa, công việc hanh thông và gặt hái thật nhiều thành tựu! 🔋✨">⚡ Năng lượng bùng nổ!</button>
                                 <button type="button" class="wish-chip-btn" data-wish="Mừng ngày hái quả ngọt sau 5 năm miệt mài tại Bách Khoa! Hẹn gặp nhau chụp thật nhiều ảnh kỷ niệm tại Hội trường A5 nhé! 📸🌟">📸 Hẹn gặp tại A5!</button>
                             </div>
-                            <textarea id="guest-message" class="form-input-clean" rows="3" placeholder="Gửi lời chúc mừng tốt nghiệp đến Phương..."></textarea>
+                            <textarea id="guest-message" class="form-input-clean" rows="3" maxlength="500" placeholder="Gửi lời chúc mừng tốt nghiệp đến Phương..."></textarea>
                         </div>
 
                         <div class="form-group-clean">
@@ -806,7 +806,8 @@
 
             <div class="share-dialog-body">
                 <label class="share-field-label" for="share-recipient-input">Tên người nhận hiển thị trên phong thư &amp; thiệp:</label>
-                <input type="text" id="share-recipient-input" class="form-input-clean share-input" placeholder="Ví dụ: Anh Minh, Nhóm Lab K21, Chị Lan...">
+                <input type="text" id="share-recipient-input" class="form-input-clean share-input" maxlength="60" placeholder="Ví dụ: Anh Minh, Nhóm Lab K21, Chị Lan...">
+                <div class="share-field-error" id="share-name-error" role="alert" hidden></div>
 
                 <div class="share-preset-chips">
                     <button type="button" class="share-preset-btn" data-name="Bạn Thân Mến">Bạn Thân Mến</button>

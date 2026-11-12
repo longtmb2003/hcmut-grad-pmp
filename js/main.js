@@ -12,10 +12,17 @@ const GOOGLE_SHEETS_WEBAPP_URL = "";
 
 let celebrationEngine = null;
 
+function prefersReducedMotion() {
+    return typeof window !== "undefined"
+        && typeof window.matchMedia === "function"
+        && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     celebrationEngine = new CelebrationEngine("confetti-canvas");
     initCountdown();
     initCopyAddress();
+    initDownloadICS();
     initCelebration();
     initShareButton();
     initTiltCard();
@@ -32,18 +39,20 @@ document.addEventListener("DOMContentLoaded", () => {
     initFunQuiz();
 
     // Hỗ trợ tự động kích hoạt hiệu ứng nếu có tham số trên URL
-    try {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("celebrate") === "caps") {
-            setTimeout(() => {
-                if (celebrationEngine) celebrationEngine.tossCaps(22);
-            }, 300);
-        } else if (params.get("celebrate") === "fireworks") {
-            setTimeout(() => {
-                if (celebrationEngine) celebrationEngine.launchFireworks(6);
-            }, 300);
-        }
-    } catch (e) {}
+    if (!prefersReducedMotion()) {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("celebrate") === "caps") {
+                setTimeout(() => {
+                    if (celebrationEngine) celebrationEngine.tossCaps(22);
+                }, 300);
+            } else if (params.get("celebrate") === "fireworks") {
+                setTimeout(() => {
+                    if (celebrationEngine) celebrationEngine.launchFireworks(6);
+                }, 300);
+            }
+        } catch (e) {}
+    }
 });
 
 /**
@@ -129,6 +138,51 @@ function initCopyAddress() {
         } catch (err) {
             console.warn("Không thể sao chép:", err);
         }
+    });
+}
+
+/**
+ * 2B. Tải file lịch .ics cho iPhone (Apple Calendar) / Outlook
+ */
+function initDownloadICS() {
+    const icsBtn = document.getElementById("download-ics-btn");
+    if (!icsBtn) return;
+
+    icsBtn.addEventListener("click", () => {
+        const icsLines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//HCMUT//Pham Minh Phuong Graduation 2026//VI",
+            "CALSCALE:GREGORIAN",
+            "METHOD:PUBLISH",
+            "BEGIN:VEVENT",
+            "UID:pmp-grad-20261128@hcmut.edu.vn",
+            "DTSTAMP:20261112T000000Z",
+            "DTSTART:20261128T010000Z",
+            "DTEND:20261128T043000Z",
+            "SUMMARY:Lễ Tốt Nghiệp Tân Kỹ Sư - Phạm Minh Phương (HCMUT)",
+            "LOCATION:Hội trường A5/C2\\, 268 Lý Thường Kiệt\\, P.14\\, Q.10\\, TP.HCM",
+            "DESCRIPTION:Trân trọng kính mời bạn tham dự Lễ Trao Bằng Tốt Nghiệp Ngành Kỹ thuật Năng lượng - Phạm Minh Phương (K2021-2026). Liên hệ đón tiếp: 0367 095 410.",
+            "BEGIN:VALARM",
+            "TRIGGER:-PT60M",
+            "ACTION:DISPLAY",
+            "DESCRIPTION:Sắp đến Lễ Tốt Nghiệp Phạm Minh Phương tại Hội trường A5 Bách Khoa",
+            "END:VALARM",
+            "END:VEVENT",
+            "END:VCALENDAR"
+        ];
+
+        const blob = new Blob([icsLines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "Le-Tot-Nghiep-Pham-Minh-Phuong-2026.ics";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        showToast("🗓️ Đã tải file lịch (.ics) — mở để lưu vào Apple Calendar / Outlook!");
     });
 }
 
@@ -326,8 +380,11 @@ function initGuestbook() {
     }
     if (attendanceInput) attendanceInput.addEventListener("change", syncLiveReceipt);
 
-    form.addEventListener("submit", (e) => {
+    let isSubmitting = false;
+
+    form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        if (isSubmitting) return;
 
         const rawName = nameInput ? nameInput.value : "";
         const relation = relationInput ? relationInput.value : "";
@@ -354,9 +411,17 @@ function initGuestbook() {
             return;
         }
 
+        isSubmitting = true;
         clearError();
         if (nameInput) nameInput.value = nameCheck.value;
         if (messageInput) messageInput.value = msgCheck.value;
+
+        const submitBtn = form.querySelector(".btn-guestbook-submit");
+        const originalBtnText = submitBtn ? submitBtn.textContent : "";
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "⏳ Đang lưu lời chúc...";
+        }
 
         const finalName = nameCheck.value;
         const finalMessage = msgCheck.value || "Chúc Kỹ sư Phạm Minh Phương luôn tràn đầy năng lượng, giữ trọn nhiệt huyết Bách Khoa và vươn xa trên con đường sự nghiệp!";
@@ -382,36 +447,46 @@ function initGuestbook() {
             quoteDisplay.textContent = `"${finalMessage}"`;
         }
 
+        // Combo pháo hoa + tung mũ cử nhân rực rỡ
+        if (celebrationEngine && !prefersReducedMotion()) {
+            celebrationEngine.comboCelebration();
+        }
+
+        receipt.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
+        if (!prefersReducedMotion()) {
+            receipt.style.transition = "transform 0.35s ease, box-shadow 0.35s ease";
+            receipt.style.transform = "scale(1.03)";
+            receipt.style.boxShadow = "0 12px 36px rgba(0, 51, 102, 0.25)";
+            setTimeout(() => {
+                receipt.style.transform = "none";
+                receipt.style.boxShadow = "";
+            }, 1200);
+        }
+
         // Thêm lời chúc vào Bảng tin & đồng bộ Google Sheets (nếu đã cấu hình URL)
         const selectedGiftBtn = document.querySelector(".gift-chip-btn.is-selected");
         const selectedGift = selectedGiftBtn ? selectedGiftBtn.getAttribute("data-gift") : "💐 Bó Hoa Hướng Dương";
-        addWishToList(finalName, relation, finalMessage, selectedGift, attendance);
+        const syncResult = await addWishToList(finalName, relation, finalMessage, selectedGift, attendance);
 
-        // Combo pháo hoa + tung mũ cử nhân rực rỡ
-        if (celebrationEngine) {
-            celebrationEngine.comboCelebration();
+        if (syncResult && syncResult.synced) {
+            showToast("🎉 Lời chúc đã được đồng bộ lên Sổ Lưu Bút Online!");
+        } else if (syncResult && syncResult.reason === "not_configured") {
+            showToast("🎉 Lời chúc của bạn đã được ghi danh vào Sổ Lưu Bút!");
+        } else {
+            showToast("✓ Đã lưu lời chúc trên máy (chưa đồng bộ lên Sheets do mạng)!");
         }
-        showToast("🎉 Lời chúc của bạn đã được ghi danh vào Sổ Lưu Bút!");
 
-        receipt.scrollIntoView({ behavior: "smooth", block: "center" });
-        receipt.style.transition = "transform 0.35s ease, box-shadow 0.35s ease";
-        receipt.style.transform = "scale(1.03)";
-        receipt.style.boxShadow = "0 12px 36px rgba(0, 51, 102, 0.25)";
-
-        setTimeout(() => {
-            receipt.style.transform = "none";
-            receipt.style.boxShadow = "";
-        }, 1200);
-
-        const submitBtn = form.querySelector(".btn-guestbook-submit");
         if (submitBtn) {
-            const originalBtnText = submitBtn.textContent;
             submitBtn.textContent = "✓ Đã lưu lời chúc thành công!";
             submitBtn.style.background = "var(--bk-cyan)";
             setTimeout(() => {
                 submitBtn.textContent = originalBtnText;
                 submitBtn.style.background = "";
-            }, 3000);
+                submitBtn.disabled = false;
+                isSubmitting = false;
+            }, 2600);
+        } else {
+            isSubmitting = false;
         }
     });
 }
@@ -512,6 +587,26 @@ function initPhotoModal() {
         if (e.key === "ArrowLeft") stepModal(-1);
         if (e.key === "ArrowRight") stepModal(1);
     });
+
+    // Hỗ trợ vuốt trái / phải chuyển ảnh trên màn hình cảm ứng mobile
+    const stage = modal.querySelector(".photo-dialog-stage");
+    if (stage) {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        stage.addEventListener("touchstart", (e) => {
+            const t = e.changedTouches[0];
+            touchStartX = t.clientX;
+            touchStartY = t.clientY;
+        }, { passive: true });
+        stage.addEventListener("touchend", (e) => {
+            const t = e.changedTouches[0];
+            const dx = t.clientX - touchStartX;
+            const dy = t.clientY - touchStartY;
+            if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+                stepModal(dx < 0 ? 1 : -1);
+            }
+        }, { passive: true });
+    }
 }
 
 function openPhotoModal(cardEl, triggerCaps = true) {
@@ -1260,22 +1355,29 @@ function initQuickWishesAndPass() {
 // ==========================================================================
 // 9. BẢNG TIN LỜI CHÚC THỜI GIAN THỰC (LIVE WISHES WALL)
 // ==========================================================================
+const INITIAL_WISHES_VISIBLE = 6;
+let wishesExpanded = false;
+let cachedWishesList = [];
+
 const DEFAULT_WISHES = [
     {
         name: "Nguyễn Văn Thành",
         relation: "Bạn bè / Đồng môn K21",
+        attendance: "yes",
         message: "Chúc mừng Tân Kỹ sư Phương! Những năm tháng Bách Khoa cùng nhau cày cuốc đồ án đã hái quả ngọt rực rỡ. Vững bước và vươn xa nhé bạn hiền!",
         time: "Hôm qua lúc 19:42"
     },
     {
         name: "Cô Lê Thanh Mai",
         relation: "Giảng viên / Thầy cô",
+        attendance: "yes",
         message: "Chúc mừng em Phương đã hoàn thành xuất sắc đồ án tốt nghiệp ngành Kỹ thuật Năng lượng. Chúc em luôn giữ vững ngọn lửa đam mê và cống hiến cho xã hội.",
         time: "Hôm nay lúc 08:15"
     },
     {
         name: "Gia đình Phương",
         relation: "Gia đình / Người thân",
+        attendance: "yes",
         message: "Cả nhà luôn tự hào về con. Chúc con đường tương lai rộng mở, luôn tràn đầy năng lượng, nhiệt huyết Bách Khoa và gặt hái nhiều thành công!",
         time: "Vừa xong"
     }
@@ -1321,6 +1423,7 @@ async function loadWishesFromGoogleSheets() {
             .map((r) => ({
                 name: sanitizeTextWhitespace(r.name || r.Name || ""),
                 relation: sanitizeTextWhitespace(r.relation || r.Relation || "Bạn bè / Đồng môn"),
+                attendance: sanitizeTextWhitespace(r.attendance || r.Attendance || "yes"),
                 message: sanitizeTextWhitespace(r.message || r.Message || ""),
                 gift: sanitizeTextWhitespace(r.gift || r.Gift || ""),
                 time: sanitizeTextWhitespace(r.time || r.Timestamp || "Đã lưu trên Google Sheets")
@@ -1361,6 +1464,14 @@ function initRecentWishes() {
         } catch (e) {}
     }
 
+    const toggleBtn = document.getElementById("btn-wishes-toggle");
+    if (toggleBtn) {
+        toggleBtn.addEventListener("click", () => {
+            wishesExpanded = !wishesExpanded;
+            renderWishes(cachedWishesList);
+        });
+    }
+
     renderWishes(wishes);
 
     if (sanitizeTextWhitespace(GOOGLE_SHEETS_WEBAPP_URL)) {
@@ -1371,13 +1482,32 @@ function initRecentWishes() {
 function renderWishes(wishes) {
     const listEl = document.getElementById("recent-wishes-list");
     const countEl = document.getElementById("wishes-counter-pill");
+    const rsvpEl = document.getElementById("rsvp-count-pill");
+    const paginationWrap = document.getElementById("wishes-pagination");
+    const toggleBtn = document.getElementById("btn-wishes-toggle");
     if (!listEl) return;
 
+    cachedWishesList = Array.isArray(wishes) ? wishes : [];
+
     if (countEl) {
-        countEl.textContent = `${wishes.length} Lời Chúc Mới Nhất`;
+        countEl.textContent = `${cachedWishesList.length} Lời Chúc Mới Nhất`;
     }
 
-    listEl.innerHTML = wishes.map((w) => {
+    if (rsvpEl) {
+        const attendingCount = cachedWishesList.filter((w) => !w.attendance || w.attendance === "yes").length;
+        if (attendingCount > 0) {
+            rsvpEl.textContent = `✨ ${attendingCount} khách xác nhận tham dự`;
+            rsvpEl.hidden = false;
+        } else {
+            rsvpEl.hidden = true;
+        }
+    }
+
+    const visibleWishes = wishesExpanded
+        ? cachedWishesList
+        : cachedWishesList.slice(0, INITIAL_WISHES_VISIBLE);
+
+    listEl.innerHTML = visibleWishes.map((w) => {
         const initial = (w.name || "K").trim().charAt(0).toUpperCase();
         const giftTag = w.gift ? `<span class="wish-gift-tag">${escapeHtml(w.gift)}</span>` : "";
         return `
@@ -1399,9 +1529,19 @@ function renderWishes(wishes) {
             </div>
         `;
     }).join("");
+
+    if (paginationWrap && toggleBtn) {
+        const hasMore = cachedWishesList.length > INITIAL_WISHES_VISIBLE;
+        paginationWrap.hidden = !hasMore;
+        if (hasMore) {
+            toggleBtn.textContent = wishesExpanded
+                ? "Thu gọn lời chúc ↑"
+                : `Xem tất cả ${cachedWishesList.length} lời chúc ↓`;
+        }
+    }
 }
 
-function addWishToList(name, relation, message, gift = "", attendance = "yes") {
+async function addWishToList(name, relation, message, gift = "", attendance = "yes") {
     let wishes = [];
     try {
         const stored = localStorage.getItem("pmp_grad_wishes");
@@ -1431,7 +1571,7 @@ function addWishToList(name, relation, message, gift = "", attendance = "yes") {
     } catch (e) {}
 
     renderWishes(wishes);
-    syncWishToGoogleSheets(entry);
+    return await syncWishToGoogleSheets(entry);
 }
 
 function escapeHtml(str) {
@@ -1912,6 +2052,7 @@ function initEnvelopeExperience() {
         const toCheck = validateUserName(toName, { required: false });
         if (toCheck.valid && toCheck.value) {
             const cleanName = toCheck.value;
+            document.title = `Kính mời ${cleanName} | Lễ Tốt Nghiệp Phạm Minh Phương HCMUT 2026`;
             if (recipientDisplay) recipientDisplay.textContent = cleanName;
             if (cardRecipientDisplay) cardRecipientDisplay.textContent = cleanName;
             const receiptName = document.getElementById("receipt-guest-name");
@@ -1932,7 +2073,7 @@ function initEnvelopeExperience() {
         overlay.classList.add("is-dismissed");
         document.body.classList.remove("envelope-locked");
         if (withCelebration) {
-            if (celebrationEngine) {
+            if (celebrationEngine && !prefersReducedMotion()) {
                 celebrationEngine.tossCaps(14);
             }
             showToast("🎓 Chào mừng bạn đến với Thiệp Mời Lễ Tốt Nghiệp!");

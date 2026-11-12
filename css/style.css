@@ -2471,6 +2471,12 @@ h1, h2, h3 {
     box-shadow: 0 10px 22px rgba(0, 40, 85, 0.28);
 }
 
+.btn-guestbook-submit:disabled {
+    opacity: 0.78;
+    cursor: wait;
+    transform: none;
+}
+
 /* Thẻ lưu niệm sau khi gửi (Credential Pass Card) */
 .guest-receipt-card {
     background: #ffffff;
@@ -2733,7 +2739,7 @@ h1, h2, h3 {
    ========================================== */
 .event-actions-cluster {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     margin-top: 18px;
 }
@@ -2800,6 +2806,20 @@ h1, h2, h3 {
     box-shadow: 0 10px 20px rgba(0, 163, 224, 0.16);
 }
 
+.btn-event-pill.btn-ics {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    color: #92400e;
+    border-color: rgba(217, 119, 6, 0.42);
+    box-shadow: 0 6px 16px rgba(217, 119, 6, 0.12);
+}
+
+.btn-event-pill.btn-ics:hover {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-color: #d97706;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(217, 119, 6, 0.22);
+}
+
 /* ==========================================
    BẢNG LỜI CHÚC GẦN ĐÂY (LIVE WISHES WALL)
    ========================================== */
@@ -2826,6 +2846,23 @@ h1, h2, h3 {
     margin: 0;
 }
 
+.wishes-header-pills {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.rsvp-count-pill {
+    background: #ecfdf5;
+    color: #065f46;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    border: 1px solid #a7f3d0;
+}
+
 .wishes-counter-pill {
     background: var(--bk-sky);
     color: var(--bk-blue);
@@ -2834,6 +2871,38 @@ h1, h2, h3 {
     padding: 4px 14px;
     border-radius: var(--radius-pill);
     border: 1px solid var(--border-cyan);
+}
+
+.wishes-pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 22px;
+}
+
+.btn-wishes-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 8px 20px;
+    border-radius: var(--radius-pill);
+    background: #ffffff;
+    color: var(--bk-navy);
+    border: 1.5px solid rgba(0, 80, 157, 0.28);
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-xs);
+    transition: all 0.2s ease;
+}
+
+.btn-wishes-toggle:hover {
+    background: var(--bk-sky);
+    border-color: var(--bk-cyan);
+    color: var(--bk-blue);
+    transform: translateY(-1px);
 }
 
 .recent-wishes-grid {
@@ -4215,4 +4284,16 @@ body.spark-cursor-active {
     font-size: 0.82rem;
     font-weight: 600;
     margin-top: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
